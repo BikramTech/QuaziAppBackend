@@ -2,9 +2,9 @@
   "name": "quazibackend",
   "version": "1.0.0",
   "description": "Quazi App Backend Server",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "cross-env NODE_ENV=local nodemon app.js"
   },
   "repository": {
     "type": "git",
@@ -15,5 +15,13 @@
   "bugs": {
     "url": "https://github.com/BikramTech/QuaziAppBackend/issues"
   },
-  "homepage": "https://github.com/BikramTech/QuaziAppBackend#readme"
+  "homepage": "https://github.com/BikramTech/QuaziAppBackend#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
+    "express": "^4.17.1",
+    "https": "^1.0.0",
+    "mongoose": "^6.0.4",
+    "nodemon": "^2.0.12"
+  }
 }
