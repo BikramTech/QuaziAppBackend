@@ -1,0 +1,19 @@
+{
+  "name": "quazibackend",
+  "version": "1.0.0",
+  "description": "Quazi App Backend Server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BikramTech/QuaziAppBackend.git"
+  },
+  "author": "Bikramjeet Singh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BikramTech/QuaziAppBackend/issues"
+  },
+  "homepage": "https://github.com/BikramTech/QuaziAppBackend#readme"
+}
