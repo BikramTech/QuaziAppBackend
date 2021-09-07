@@ -1,27 +1,27 @@
 {
-  "name": "quazibackend",
-  "version": "1.0.0",
-  "description": "Quazi App Backend Server",
-  "main": "app.js",
+  "name": "quazi.api",
+  "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "start": "cross-env NODE_ENV=local nodemon app.js"
+    "start": "node ./bin/www",
+    "dev": "nodemon ./app.js --serve"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/BikramTech/QuaziAppBackend.git"
-  },
-  "author": "Bikramjeet Singh",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/BikramTech/QuaziAppBackend/issues"
-  },
-  "homepage": "https://github.com/BikramTech/QuaziAppBackend#readme",
   "dependencies": {
-    "cors": "^2.8.5",
-    "cross-env": "^7.0.3",
-    "express": "^4.17.1",
-    "https": "^1.0.0",
+    "bcrypt": "^5.0.1",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^10.0.0",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "jade": "~1.11.0",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.0.4",
+    "mongoose-unique-validator": "^2.0.3",
+    "morgan": "^1.9.1",
+    "multer": "^1.4.3",
+    "nodemailer": "^6.6.3"
+  },
+  "devDependencies": {
     "nodemon": "^2.0.12"
   }
 }
