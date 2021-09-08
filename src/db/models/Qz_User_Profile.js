@@ -4,7 +4,7 @@ const { appConfig } = require("../../config")
 
 const QzUserProfileSchema = new mongoose.Schema({
     user_id: {
-        type: mongoose.SchemaTypes.ObjectId,
+        type: String,
         required: true
     },
     first_name: {
@@ -28,27 +28,27 @@ const QzUserProfileSchema = new mongoose.Schema({
     dob: {
         type: Date,
         default: null,
+        required: true
     },
     gender: {
-        type: String,
-        default: null,
-    },
-    image: {
         type: String,
         default: null,
     },
     residential_address: {
         type: String,
         default: null,
+        required: true
     },
     profile_summary: {
         type: String,
         default: null,
+        required: true
     },
     skills: {
         type: Array,
         ref: "xx_qz_key_skills",
         default: null,
+        required: true
     },
     social_type: {
         type: Number,
@@ -111,6 +111,10 @@ const QzUserProfileSchema = new mongoose.Schema({
     agreement_terms_conditions: {
         type: Number,
         enum: [1, 2],
+    },
+    profile_pic: {
+        type: String,
+        required: true
     }
 });
 QzUserProfileSchema.methods.generateAuthToken = () => {

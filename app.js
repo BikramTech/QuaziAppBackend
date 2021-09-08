@@ -13,10 +13,10 @@ const app = express()
 
 // Morgan logger to log http logs
 app.use(logger('dev'))
-app.use(express.json())
-app.use(express.urlencoded({ extended: false }))
+app.use(express.json({ limit: '5mb' }))
+app.use(express.urlencoded({ extended: false, limit: '5mb' }))
 app.use(cookieParser())
-app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.static(path.join(__dirname)));
 
 app.use(require('./src/routes'))
 
@@ -38,6 +38,8 @@ app.use(function (err, req, res, next) {
     }
   })
 })
+
+global.__baseDirectory = __dirname;
 
 const server = app.listen(process.env.DEV_APP_PORT || 3000, function () {
   console.log('Listening on port ' + server.address().port)

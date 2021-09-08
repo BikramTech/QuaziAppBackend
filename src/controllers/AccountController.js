@@ -4,16 +4,15 @@ const { MailService } = require('../lib/services')
 const helpers = require('../config/helpers')
 const xx_qz_user = require('../db/models/xx_qz_user')
 const { QzUserRegistration, QzUserProfile } = require('../db/models')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcrypt');
 
 class AccountController {
-  static async userSignup (req, res) {
+  static async userSignup(req, res) {
     // skills work pending!
     try {
       const {
         user_name,
         email,
-        password,
         mobile_no,
         first_name,
         last_name,
@@ -34,11 +33,9 @@ class AccountController {
       } = req.body
 
       const salt = await bcrypt.genSalt(10)
-      const hashedPassword = await bcrypt.hash(password, salt)
+      const hashedPassword = await bcrypt.hash(req.body.password, salt)
 
-      const user_id = mongoose.Types.ObjectId()
       const userRegistrationResult = await new QzUserRegistration({
-        _id: user_id,
         user_name,
         email,
         password: hashedPassword,
@@ -69,11 +66,11 @@ class AccountController {
         social_id,
         social_type,
         profile_pic:
-          req.files?.length && req.files.length && req.files?.profile_pic
+          req?.files && req.files?.profile_pic
             ? req.files?.profile_pic[0].path
             : null,
         resume_file:
-          req.files?.length && req.files.length && req.files?.resume_file
+          req?.files && req.files?.resume_file
             ? req.files?.resume_file[0].path
             : null
       })
@@ -85,12 +82,13 @@ class AccountController {
 
       await MailService.sendMail(email, 'OTP For Quazi App Registration', OTP)
 
-      const token = userProfile.generateAuthToken()
+      const token = userProfile.generateAuthToken();
+      const { password, _id, ...userRegistrationDoc } = userRegistrationResult._doc
 
       let response = {
         status_code: 1,
         message: 'Succesfully Signed Up',
-        result: [{ ...userRegistrationResult, ...userProfile }]
+        result: [{ ...userRegistrationDoc, ...userProfile._doc }]
       }
 
       return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
@@ -99,13 +97,13 @@ class AccountController {
     }
   }
 
-  static async userLogin (req, res) {
+  static async userLogin(req, res) {
     let user = {}
     let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
-    const { email, password } = req.body
+    const { email } = req.body;
 
     if (!email) {
-      helpers.SendErrorsAsResponse(
+      return helpers.SendErrorsAsResponse(
         null,
         res,
         'Please enter atleast one of email or mobile number or user name'
@@ -130,15 +128,15 @@ class AccountController {
       )
     }
     let userProfile = await QzUserProfile.findOne({ user_id: user._id })
-    if (userProfile && userProfile.status == 2) {
+    if (userProfile && (!userProfile.status || !userProfile.is_email_verified)) {
       return helpers.SendErrorsAsResponse(
         null,
         res,
-        'Your account is inactive. Please contact administrator!'
+        !userProfile.status ? 'Your account is inactive. Please contact administrator!' : !userProfile.is_email_verified ? 'Please verify your email.' : ''
       )
     }
 
-    const validPassword = await bcrypt.compare(password, user.password)
+    const validPassword = await bcrypt.compare(req.body.password, user.password)
     if (!validPassword)
       return helpers.SendErrorsAsResponse(
         null,
@@ -148,16 +146,18 @@ class AccountController {
 
     const token = user.generateAuthToken()
 
+    const { password, ...userDoc } = user._doc
+
     let response = {
       status_code: 1,
       message: 'Your login is successful',
-      result: [{ ...user._doc, ...userProfile._doc }]
+      result: [{ ...userDoc, ...userProfile._doc }]
     }
 
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
 
-  static async socialLoginValidation (req, res) {
+  static async socialLoginValidation(req, res) {
     const { email } = req.body
     let user = ''
 
@@ -177,7 +177,7 @@ class AccountController {
         )
       }
       let userProfile = await QzUserProfile.findOne({ user_id: user._id })
-      if (userProfile && userProfile.status == 2) {
+      if (userProfile && !userProfile.status) {
         return helpers.SendErrorsAsResponse(
           null,
           res,
@@ -187,10 +187,12 @@ class AccountController {
 
       const token = user.generateAuthToken()
 
+      const { password, ...userDoc } = user._doc
+
       let response = {
         status_code: 1,
         message: 'This Email is already registered',
-        result: [{ ...user._doc, ...userProfile._doc }]
+        result: [{ ...userDoc, ...userProfile._doc }]
       }
 
       return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
@@ -199,7 +201,7 @@ class AccountController {
     }
   }
 
-  static async emailVerification (req, res) {
+  static async emailVerification(req, res) {
     const { email, otp } = req.body
 
     try {
@@ -268,9 +270,9 @@ class AccountController {
     }
   }
 
-  static async socialLogin (req, res) {
+  static async socialLogin(req, res) {
     try {
-      const { mobile_no, email, password, user_name } = req.body
+      const { mobile_no, email, user_name } = req.body
 
       if (!email) {
         return helpers.SendErrorsAsResponse(null, res, 'email required')
@@ -303,11 +305,9 @@ class AccountController {
         )
 
       const salt = await bcrypt.genSalt(10)
-      const hashedPassword = await bcrypt.hash(password, salt)
+      const hashedPassword = await bcrypt.hash(req.body.password, salt)
 
-      const user_id = mongoose.Types.ObjectId()
       const user = await new QzUserRegistration({
-        _id: user_id,
         user_name,
         email,
         password: hashedPassword,
@@ -327,7 +327,11 @@ class AccountController {
           countryCode: req.body.countryCode,
           social_id: req.body.social_id,
           social_type: req.body.social_type,
-          otp: OTP
+          otp: OTP,
+          dob: req.body.dob,
+          residential_address: req.body.residential_address,
+          profile_summary: req.body.profile_summary,
+          is_email_verified: true
         })
       } else {
         userProfile = new QzUserProfile({
@@ -337,8 +341,12 @@ class AccountController {
           countryCode: req.body.countryCode,
           social_id: req.body.social_id,
           social_type: req.body.social_type,
-          profile_pic: req.files.profile_pic[0].path,
-          otp: OTP
+          profile_pic: req.files && req.files?.profile_pic ? req.files.profile_pic[0].path : null,
+          otp: OTP,
+          dob: req.body.dob,
+          residential_address: req.body.residential_address,
+          profile_summary: req.body.profile_summary,
+          is_email_verified: true
         })
       }
 
@@ -347,12 +355,13 @@ class AccountController {
       await user.save()
       await userProfile.save()
 
-      const token = user.generateAuthToken()
+      const token = user.generateAuthToken();
+      const { password, _id, ...userDoc } = user._doc;
 
       let response = {
         status_code: 1,
         message: 'User is registered successfully!',
-        result: [{ ...user._doc, ...userProfile._doc }]
+        result: [{ ...userDoc, ...userProfile._doc }]
       }
 
       return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
@@ -361,7 +370,7 @@ class AccountController {
     }
   }
 
-  static async profileUpdate (req, res) {
+  static async profileUpdate(req, res) {
     try {
       if (Object.keys(req.files).length === 0) {
         const user = await xx_qz_user.findByIdAndUpdate(
@@ -458,7 +467,7 @@ class AccountController {
     }
   }
 
-  static async details (req, res) {
+  static async details(req, res) {
     try {
       const user = await QzUserRegistration.findById(req.params.id)
       if (!user)
@@ -480,7 +489,7 @@ class AccountController {
     }
   }
 
-  static async forgotPassword (req, res) {
+  static async forgotPassword(req, res) {
     try {
       // let password = req.body.newPassword
       // const salt = await bcrypt.genSalt(10)
@@ -516,7 +525,7 @@ class AccountController {
     }
   }
 
-  static async changePassword (req, res) {
+  static async changePassword(req, res) {
     try {
       let password = req.body.newPassword
       const salt = await bcrypt.genSalt(10)
@@ -570,7 +579,7 @@ class AccountController {
     }
   }
 
-  static async sendOtp (req, res) {
+  static async sendOtp(req, res) {
     try {
       const { email } = req.body
       let OTP = helpers.GenerateSixDigitCode()
@@ -605,22 +614,17 @@ class AccountController {
     }
   }
 
-  static async changeStatus (req, res) {
+  static async changeStatus(req, res) {
     try {
-      if (
-        req.body.status == null ||
-        req.body.status == '' ||
-        req.body.status == undefined
-      ) {
-        return res.status(404).send({
-          status_code: 2,
-          message: 'Please Provide a Valid Argument in Body',
-          result: []
-        })
+
+      if (req.body.status) {
+
+        return helpers.SendErrorsAsResponse(null, res, 'Please Provide a Valid Argument in Body');
       }
       let status = req.body.status
       status = status.toLowerCase()
-      const user = await xx_qz_user.findByIdAndUpdate(
+
+      const user = await QzUserProfile.findByIdAndUpdate(
         req.params.id,
         {
           status: status,
@@ -630,11 +634,8 @@ class AccountController {
       )
 
       if (!user)
-        return res.status(404).send({
-          status_code: 2,
-          message: 'The id Provided is Invalid',
-          result: []
-        })
+
+        return helpers.SendErrorsAsResponse(null, res, 'The id Provided is Invalid');
 
       let response = {
         status_code: 1,
@@ -644,9 +645,7 @@ class AccountController {
             _id: user._id,
             first_name: user.first_name,
             last_name: user.last_name,
-            email: user.email,
             countryCode: user.countryCode,
-            mobile_no: user.mobile_no,
             address: user.address,
             countryOfBirth: user.countryOfBirth,
             cityOfBirth: user.cityOfBirth,
@@ -661,10 +660,10 @@ class AccountController {
         ]
       }
 
-      res.status(200).send(response)
+      return helpers.SendSuccessResponse(res, response);
     } catch (err) {
-      res.status(400).send({ status_code: 2, message: err.message, result: [] })
-      console.log('change status', err.message)
+
+      return helpers.SendErrorsAsResponse(err, res, null);
     }
   }
 }
