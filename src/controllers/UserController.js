@@ -6,8 +6,16 @@ const xx_qz_user = require('../db/models/xx_qz_user')
 const { QzUserRegistration, QzUserProfile } = require('../db/models')
 const bcrypt = require('bcrypt')
 
+const skillsDb = [
+  { _id: 1, name: "C#" },
+  { _id: 2, name: "Javascript" },
+  { _id: 3, name: "Java" },
+  { _id: 4, name: "React" },
+  { _id: 4, name: "Angular" },
+]
+
 class UserController {
-  static async userSignup (req, res) {
+  static async userSignup(req, res) {
     // skills work pending!
     try {
       const {
@@ -44,10 +52,13 @@ class UserController {
 
       await userRegistrationResult.validate()
 
-      const OTP = helpers.GenerateSixDigitCode()
+      const OTP = helpers.GenerateSixDigitCode();
+
+      const selectedSkills = skillsDb.filter(skill => skills.includes(skill._id)).map(({ _id, name }) => { return { skill_id: _id, skill_name: name } });
 
       const userProfile = new QzUserProfile({
         user_id: userRegistrationResult._id,
+        skills: selectedSkills,
         first_name,
         last_name,
         profile_summary,
@@ -101,7 +112,7 @@ class UserController {
     }
   }
 
-  static async userLogin (req, res) {
+  static async userLogin(req, res) {
     let user = {}
     let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     const { email } = req.body
@@ -142,8 +153,8 @@ class UserController {
         !userProfile.status
           ? 'Your account is inactive. Please contact administrator!'
           : !userProfile.is_email_verified
-          ? 'Please verify your email.'
-          : ''
+            ? 'Please verify your email.'
+            : ''
       )
     }
 
@@ -168,7 +179,7 @@ class UserController {
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
 
-  static async socialLoginValidation (req, res) {
+  static async socialLoginValidation(req, res) {
     const { email } = req.body
     let user = ''
 
@@ -212,7 +223,7 @@ class UserController {
     }
   }
 
-  static async emailVerification (req, res) {
+  static async emailVerification(req, res) {
     const { email, otp } = req.body
 
     try {
@@ -281,7 +292,7 @@ class UserController {
     }
   }
 
-  static async socialLogin (req, res) {
+  static async socialLogin(req, res) {
     try {
       const { mobile_no, email, user_name } = req.body
 
@@ -385,7 +396,7 @@ class UserController {
   }
 
   // pending work with this api
-  static async profileUpdate (req, res) {
+  static async profileUpdate(req, res) {
     try {
       if (Object.keys(req.files).length === 0) {
         const user = await xx_qz_user.findByIdAndUpdate(
@@ -482,7 +493,7 @@ class UserController {
     }
   }
 
-  static async details (req, res) {
+  static async details(req, res) {
     try {
       const user = await QzUserRegistration.findById(req.params.id)
       if (!user)
@@ -506,7 +517,7 @@ class UserController {
     }
   }
 
-  static async forgotPassword (req, res) {
+  static async forgotPassword(req, res) {
     try {
       const user = await QzUserRegistration.findOne({ email: req.body.email })
       if (!user)
@@ -545,7 +556,7 @@ class UserController {
     }
   }
 
-  static async changePassword (req, res) {
+  static async changePassword(req, res) {
     try {
       let password = req.body.newPassword
       const salt = await bcrypt.genSalt(10)
@@ -599,7 +610,7 @@ class UserController {
     }
   }
 
-  static async sendOtp (req, res) {
+  static async sendOtp(req, res) {
     try {
       const { email } = req.body
       let OTP = helpers.GenerateSixDigitCode()
@@ -634,7 +645,7 @@ class UserController {
     }
   }
 
-  static async changeStatus (req, res) {
+  static async changeStatus(req, res) {
     try {
       if (req.body.status) {
         return helpers.SendErrorsAsResponse(
