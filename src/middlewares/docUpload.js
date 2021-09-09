@@ -1,6 +1,5 @@
 const multer = require("multer");
 var fs = require('fs');
-const path = require('path');
 
 const storage = multer.diskStorage({
   destination: async (req, file, callback) => {

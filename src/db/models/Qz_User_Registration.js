@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
-var uniqueValidator = require('mongoose-unique-validator')
+const uniqueValidator = require('mongoose-unique-validator')
+const bcrypt = require('bcrypt')
 
 const QzUserRegistrationSchema = new mongoose.Schema({
   user_name: {
@@ -33,6 +34,10 @@ QzUserRegistrationSchema.methods.generateAuthToken = function () {
   })
   return token
 }
+
+QzUserRegistrationSchema.methods.comparePassword = function (password) {
+  return bcrypt.compareSync(password, this.password);
+};
 
 const Qz_User_Registration = mongoose.model(
   'Qz_User_Registration',

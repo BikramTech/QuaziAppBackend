@@ -1,15 +1,15 @@
-// const { User } = require("../db/models");
 const mongoose = require('mongoose')
+const bcrypt = require('bcrypt')
+
 const { MailService } = require('../lib/services')
 const helpers = require('../config/helpers')
-const xx_qz_user = require('../db/models/xx_qz_user')
-const { QzUserRegistration, QzUserProfile, QzKeySkills } = require('../db/models')
-const bcrypt = require('bcrypt')
+const { QzUserRegistration, QzUserProfile } = require('../db/models')
+
 
 
 class UserController {
   static async userSignup(req, res) {
-    // skills work pending!
+
     try {
       const {
         user_name,
@@ -47,15 +47,9 @@ class UserController {
 
       const OTP = helpers.GenerateSixDigitCode();
 
-      let selectedSkills = await QzKeySkills.find({ id: { "$in": skills } });
-
-      if (selectedSkills && selectedSkills?.length) {
-        selectedSkills = selectedSkills.map(x => x._doc).map(({ _id, name }) => { return { skill_id: _id, skill_name: name } });
-      }
-
       const userProfile = new QzUserProfile({
         user_id: userRegistrationResult._id,
-        skills: selectedSkills,
+        skills,
         first_name,
         last_name,
         profile_summary,
@@ -95,12 +89,13 @@ class UserController {
         password,
         _id,
         ...userRegistrationDoc
-      } = userRegistrationResult._doc
+      } = userRegistrationResult._doc;
+      const { _id: userId, ...userProfileDoc } = userProfile._doc;
 
       let response = {
         status_code: 1,
-        message: 'Succesfully Signed Up',
-        result: [{ ...userRegistrationDoc, ...userProfile._doc }]
+        message: 'Your account registration is successful',
+        result: [{ ...userRegistrationDoc, ...userProfileDoc }]
       }
 
       return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
@@ -110,6 +105,7 @@ class UserController {
   }
 
   static async userLogin(req, res) {
+
     let user = {}
     let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     const { email } = req.body
@@ -139,6 +135,7 @@ class UserController {
         'Invalid username or password.'
       )
     }
+
     let userProfile = await QzUserProfile.findOne({ user_id: user._id })
     if (
       userProfile &&
@@ -155,8 +152,9 @@ class UserController {
       )
     }
 
-    const validPassword = await bcrypt.compare(req.body.password, user.password)
-    if (!validPassword)
+    const isValidPassword = await user.comparePassword(req.body.password);
+
+    if (!isValidPassword)
       return helpers.SendErrorsAsResponse(
         null,
         res,
@@ -165,18 +163,20 @@ class UserController {
 
     const token = user.generateAuthToken()
 
-    const { password, _id, ...userDoc } = user._doc
+    const { password, _id, ...userDoc } = user._doc;
+    const { _id: userId, ...userProfileDoc } = userProfile._doc;
 
     let response = {
       status_code: 1,
       message: 'Your login is successful',
-      result: [{ ...userDoc, ...userProfile._doc }]
+      result: [{ ...userDoc, ...userProfileDoc }]
     }
 
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
 
   static async socialLoginValidation(req, res) {
+
     const { email } = req.body
     let user = ''
 
@@ -206,12 +206,13 @@ class UserController {
 
       const token = user.generateAuthToken()
 
-      const { password, ...userDoc } = user._doc
+      const { _id, password, ...userDoc } = user._doc
+      const { _id: userId, ...userProfileDoc } = userProfile._doc;
 
       let response = {
         status_code: 1,
         message: 'This Email is already registered',
-        result: [{ ...userDoc, ...userProfile._doc }]
+        result: [{ ...userDoc, ...userProfileDoc }]
       }
 
       return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
@@ -221,11 +222,11 @@ class UserController {
   }
 
   static async emailVerification(req, res) {
+
     const { email, otp } = req.body
 
     try {
-      if (!email)
-        return helpers.SendErrorsAsResponse(null, res, 'Email is required')
+
 
       const userResult = await QzUserRegistration.findOne({
         email
@@ -242,7 +243,7 @@ class UserController {
           'The email you entered does not exist.'
         )
       }
-      if (userProfileResult.status === 2)
+      if (!userProfileResult.status)
         helpers.SendErrorsAsResponse(
           null,
           res,
@@ -254,7 +255,7 @@ class UserController {
       if (userProfileResult.otp && !userProfileResult.is_email_verified) {
         if (userProfileResult.otp === otp) {
           const { modifiedCount } = await userProfileResult.updateOne({
-            is_email_verified: 1
+            is_email_verified: true
           })
 
           if (modifiedCount) {
@@ -293,14 +294,6 @@ class UserController {
     try {
       const { mobile_no, email, user_name } = req.body
 
-      if (!email) {
-        return helpers.SendErrorsAsResponse(null, res, 'email required')
-      }
-
-      if (!mobile_no) {
-        return helpers.SendErrorsAsResponse(null, res, 'mobile number required')
-      }
-
       let userDetails = await QzUserRegistration.findOne({
         email: { $regex: email, $options: 'i' }
       })
@@ -337,40 +330,23 @@ class UserController {
 
       const OTP = helpers.GenerateSixDigitCode()
 
-      let userProfile = ''
-      if (!req.files) {
-        userProfile = new QzUserProfile({
-          user_id: user._id,
-          first_name: req.body.first_name,
-          last_name: req.body.last_name,
-          countryCode: req.body.countryCode,
-          social_id: req.body.social_id,
-          social_type: req.body.social_type,
-          otp: OTP,
-          dob: req.body.dob,
-          residential_address: req.body.residential_address,
-          profile_summary: req.body.profile_summary,
-          is_email_verified: true
-        })
-      } else {
-        userProfile = new QzUserProfile({
-          user_id: user._id,
-          first_name: req.body.first_name,
-          last_name: req.body.last_name,
-          countryCode: req.body.countryCode,
-          social_id: req.body.social_id,
-          social_type: req.body.social_type,
-          profile_pic:
-            req.files && req.files?.profile_pic
-              ? req.files.profile_pic[0].path
-              : null,
-          otp: OTP,
-          dob: req.body.dob,
-          residential_address: req.body.residential_address,
-          profile_summary: req.body.profile_summary,
-          is_email_verified: true
-        })
-      }
+      const userProfile = new QzUserProfile({
+        user_id: user._id,
+        first_name: req.body.first_name,
+        last_name: req.body.last_name,
+        countryCode: req.body.countryCode,
+        social_id: req.body.social_id,
+        social_type: req.body.social_type,
+        profile_pic:
+          req?.files && req.files?.profile_pic
+            ? req.files.profile_pic[0].path
+            : null,
+        otp: OTP,
+        dob: req.body.dob,
+        residential_address: req.body.residential_address,
+        profile_summary: req.body.profile_summary,
+        is_email_verified: true
+      })
 
       await userProfile.validate()
 
@@ -379,11 +355,12 @@ class UserController {
 
       const token = user.generateAuthToken()
       const { password, _id, ...userDoc } = user._doc
+      const { _id: userId, ...userProfileDoc } = userProfile._doc;
 
       let response = {
         status_code: 1,
         message: 'User is registered successfully!',
-        result: [{ ...userDoc, ...userProfile._doc }]
+        result: [{ ...userDoc, ...userProfileDoc }]
       }
 
       return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
@@ -392,101 +369,73 @@ class UserController {
     }
   }
 
-  // pending work with this api
   static async profileUpdate(req, res) {
     try {
-      if (Object.keys(req.files).length === 0) {
-        const user = await xx_qz_user.findByIdAndUpdate(
-          req.params.id,
-          {
-            first_name: req.body.first_name,
-            last_name: req.body.last_name,
-            countryCode: req.body.countryCode,
-            mobile_no: req.body.mobile_no,
-            address: req.body.address,
-            user_name: req.body.user_name,
-            description: req.body.description,
-            education: req.body.education,
-            experience: req.body.experience,
-            gender: req.body.gender,
-            dob: req.body.dob,
-            password: req.body.password,
-            email: req.body.email,
-            summary: req.body.summary,
-            skill_id: req.body.skill_id,
-            maritial_status: req.body.maritial_status,
-            languages: req.body.languages,
-            social_id: req.body.social_id,
-            social_type: req.body.social_type,
-            project_undertaken: req.body.project_undertaken,
-            updated: new Date()
-          },
-          { new: true }
-        )
 
-        if (!user)
-          return res.status(404).send({
-            status_code: 4,
-            message: 'The user with the given ID was not found.',
-            result: []
-          })
+      const {
+        first_name,
+        last_name,
+        countryCode,
+        residential_address,
+        description,
+        education,
+        experience,
+        dob,
+        profile_summary,
+        skills,
+        marital_status,
+        languages,
+        social_id,
+        social_type
+      } = req.body
 
-        let response = {
-          status_code: 1,
-          message: 'User Profile Succesfully Updated',
-          result: [user]
-        }
+      const user = await QzUserProfile.findOneAndUpdate(
+        { user_id: req.params.id },
+        {
+          skills,
+          first_name,
+          last_name,
+          profile_summary,
+          countryCode,
+          residential_address,
+          description,
+          education,
+          experience,
+          dob,
+          description,
+          languages,
+          marital_status,
+          social_id,
+          social_type,
+          profile_pic:
+            req?.files && req.files?.profile_pic
+              ? req.files?.profile_pic[0].path
+              : null,
+          resume_file:
+            req?.files && req.files?.resume_file
+              ? req.files?.resume_file[0].path
+              : null,
+          updated_at: new Date()
+        },
+        { new: true }
+      );
 
-        res.status(200).send(response)
-      } else {
-        const user = await xx_qz_user.findByIdAndUpdate(
-          req.params.id,
-          {
-            first_name: req.body.first_name,
-            last_name: req.body.last_name,
-            countryCode: req.body.countryCode,
-            mobile_no: req.body.mobile_no,
-            address: req.body.address,
-            user_name: req.body.user_name,
-            description: req.body.description,
-            education: req.body.education,
-            experience: req.body.experience,
-            gender: req.body.gender,
-            dob: req.body.dob,
-            password: req.body.password,
-            email: req.body.email,
-            summary: req.body.summary,
-            skill_id: req.body.skill_id,
-            maritial_status: req.body.maritial_status,
-            languages: req.body.languages,
-            social_id: req.body.social_id,
-            social_type: req.body.social_type,
-            project_undertaken: req.body.project_undertaken,
-            image: req.files.image[0].path,
-            resume: req.files.resume[0].path,
-            updated: new Date()
-          },
-          { new: true }
-        )
+      if (!user)
 
-        if (!user)
-          return res.status(404).send({
-            status_code: 4,
-            message: 'The user with the given ID was not found.',
-            result: []
-          })
+        return helpers.SendErrorsAsResponse(null, res, "The user with the given ID was not found.");
 
-        let response = {
-          status_code: 1,
-          message: 'User Profile Succesfully Updated',
-          result: [user]
-        }
+      const token = user.generateAuthToken()
 
-        res.status(200).send(response)
+      let response = {
+        status_code: 1,
+        message: 'User Profile Succesfully Updated',
+        result: []
       }
+
+      return helpers.SendSuccessResponseWithAuthHeader(res, token, response);
+
     } catch (err) {
-      res.status(400).send({ status_code: 2, message: err.message, result: [] })
-      console.log('user Profile update', err.message)
+      return helpers.SendErrorsAsResponse(err, res);
     }
   }
 
@@ -502,11 +451,12 @@ class UserController {
       let userProfile = await QzUserProfile.findOne({ user_id: user._id })
 
       const { password, _id, ...userDoc } = user._doc
+      const { _id: userId, ...userProfileDoc } = userProfile._doc
 
       let response = {
         status_code: 1,
         message: 'User Details Successfully Fetched',
-        result: [{ ...userDoc, ...userProfile._doc }]
+        result: [{ ...userDoc, ...userProfileDoc }]
       }
       return helpers.SendSuccessResponse(res, response)
     } catch (err) {
@@ -517,12 +467,14 @@ class UserController {
   static async forgotPassword(req, res) {
     try {
       const user = await QzUserRegistration.findOne({ email: req.body.email })
+
       if (!user)
         return helpers.SendErrorsAsResponse(
           null,
           res,
           'The Email provided is Invalid'
         )
+
       let password = req.body.newPassword
       const salt = await bcrypt.genSalt(10)
       password = await bcrypt.hash(password, salt)
@@ -568,10 +520,8 @@ class UserController {
           'The ID Provided is Invalid'
         )
 
-      const validPassword = await bcrypt.compare(
-        req.body.oldPassword,
-        userDetails.password
-      )
+      const validPassword = await userDetails.comparePassword(req.body.oldPassword);
+
       if (!validPassword)
         return helpers.SendErrorsAsResponse(
           null,
@@ -598,7 +548,7 @@ class UserController {
       let response = {
         status_code: 1,
         message: 'Password Changed Successfully',
-        result: [user]
+        result: []
       }
 
       return helpers.SendSuccessResponse(res, response)
@@ -651,8 +601,7 @@ class UserController {
           'Please Provide a Valid Argument in Body'
         )
       }
-      let status = req.body.status
-      status = status.toLowerCase()
+      let status = req.body.status;
 
       const user = await QzUserProfile.findByIdAndUpdate(
         req.params.id,
@@ -673,24 +622,7 @@ class UserController {
       let response = {
         status_code: 1,
         message: 'Status Changed Successfully',
-        result: [
-          {
-            _id: user._id,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            countryCode: user.countryCode,
-            address: user.address,
-            countryOfBirth: user.countryOfBirth,
-            cityOfBirth: user.cityOfBirth,
-            roleID: user.roleID,
-            status: user.status,
-            image: user.image,
-            dob: user.dob,
-            gender: user.gender,
-            created: user.created,
-            updated: user.updated
-          }
-        ]
+        result: []
       }
 
       return helpers.SendSuccessResponse(res, response)
