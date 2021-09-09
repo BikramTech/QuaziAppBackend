@@ -3,16 +3,9 @@ const mongoose = require('mongoose')
 const { MailService } = require('../lib/services')
 const helpers = require('../config/helpers')
 const xx_qz_user = require('../db/models/xx_qz_user')
-const { QzUserRegistration, QzUserProfile } = require('../db/models')
+const { QzUserRegistration, QzUserProfile, QzKeySkills } = require('../db/models')
 const bcrypt = require('bcrypt')
 
-const skillsDb = [
-  { _id: 1, name: "C#" },
-  { _id: 2, name: "Javascript" },
-  { _id: 3, name: "Java" },
-  { _id: 4, name: "React" },
-  { _id: 4, name: "Angular" },
-]
 
 class UserController {
   static async userSignup(req, res) {
@@ -32,7 +25,7 @@ class UserController {
         gender,
         dob,
         profile_summary,
-        skills,
+        skills = ["1", "2"],
         marital_status,
         languages,
         agreement_terms_conditions,
@@ -54,7 +47,11 @@ class UserController {
 
       const OTP = helpers.GenerateSixDigitCode();
 
-      const selectedSkills = skillsDb.filter(skill => skills.includes(skill._id)).map(({ _id, name }) => { return { skill_id: _id, skill_name: name } });
+      let selectedSkills = await QzKeySkills.find({ id: { "$in": skills } });
+
+      if (selectedSkills && selectedSkills?.length) {
+        selectedSkills = selectedSkills.map(x => x._doc).map(({ _id, name }) => { return { skill_id: _id, skill_name: name } });
+      }
 
       const userProfile = new QzUserProfile({
         user_id: userRegistrationResult._id,
