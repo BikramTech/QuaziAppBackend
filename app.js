@@ -9,10 +9,22 @@ const compression = require("compression");
 
 const constants = require('./src/lib/constants')
 const db = require('./src/db/dbConnection')
+const cors = require("cors");
 
 const isProduction = process.env.NODE_ENV === constants.environment.production
 
 const app = express()
+
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
+app.use(cors());
+app.options("*", cors());
 
 // Morgan logger to log http logs
 app.use(logger('dev'))
