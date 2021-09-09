@@ -25,7 +25,7 @@ class UserController {
         gender,
         dob,
         profile_summary,
-        skills = ["1", "2"],
+        skills,
         marital_status,
         languages,
         agreement_terms_conditions,
