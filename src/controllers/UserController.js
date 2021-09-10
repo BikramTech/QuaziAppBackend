@@ -294,6 +294,23 @@ class UserController {
     try {
       const { mobile_no, email, user_name } = req.body
 
+      let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+
+      if (!email) {
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'Please enter email'
+        )
+      }
+      else if (!email.match(regexEmail)) {
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'Please enter a valid email'
+        )
+      }
+
       let userDetails = await QzUserRegistration.findOne({
         email: { $regex: email, $options: 'i' }
       })
@@ -305,16 +322,6 @@ class UserController {
           'Email is Already Registered.'
         )
 
-      let mobile = await QzUserRegistration.findOne({
-        mobile_no
-      })
-
-      if (mobile)
-        return helpers.SendErrorsAsResponse(
-          null,
-          res,
-          'Mobile Number is Already Registered.'
-        )
 
       const salt = await bcrypt.genSalt(10)
       const hashedPassword = await bcrypt.hash(req.body.password, salt)
