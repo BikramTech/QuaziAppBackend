@@ -21,7 +21,7 @@ router.patch(
 router.get('/Details/:id', Authorize, UserController.details)
 router.post('/ForgotPassword', UserController.forgotPassword)
 router.patch('/ChangePassword/:id', Authorize, UserController.changePassword)
-router.post('/SendOtp', Authorize, UserController.sendOtp)
+router.post('/SendOtp', UserController.sendOtp)
 router.patch('/ChangeStatus/:id', Authorize, UserController.changeStatus)
 
 module.exports = router

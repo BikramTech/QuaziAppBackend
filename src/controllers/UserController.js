@@ -6,7 +6,7 @@ const helpers = require('../config/helpers')
 const { QzUserRegistration, QzUserProfile } = require('../db/models')
 
 class UserController {
-  static async userSignup (req, res) {
+  static async userSignup(req, res) {
     try {
       const {
         user_name,
@@ -101,7 +101,7 @@ class UserController {
     }
   }
 
-  static async userLogin (req, res) {
+  static async userLogin(req, res) {
     let user = {}
     let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     const { email } = req.body
@@ -143,8 +143,8 @@ class UserController {
         !userProfile.status
           ? 'Your account is inactive. Please contact administrator!'
           : !userProfile.is_email_verified
-          ? 'Please verify your email.'
-          : ''
+            ? 'Please verify your email.'
+            : ''
       )
     }
 
@@ -171,7 +171,7 @@ class UserController {
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
 
-  static async socialLoginValidation (req, res) {
+  static async socialLoginValidation(req, res) {
     const { email } = req.body
     let user = ''
 
@@ -216,7 +216,7 @@ class UserController {
     }
   }
 
-  static async emailVerification (req, res) {
+  static async emailVerification(req, res) {
     const { email, otp } = req.body
 
     try {
@@ -282,7 +282,7 @@ class UserController {
     }
   }
 
-  static async socialLogin (req, res) {
+  static async socialLogin(req, res) {
     try {
       const { mobile_no, email, user_name } = req.body
 
@@ -368,7 +368,7 @@ class UserController {
     }
   }
 
-  static async profileUpdate (req, res) {
+  static async profileUpdate(req, res) {
     try {
       const {
         first_name,
@@ -439,7 +439,7 @@ class UserController {
     }
   }
 
-  static async details (req, res) {
+  static async details(req, res) {
     try {
       const user = await QzUserRegistration.findById(req.params.id)
       if (!user)
@@ -464,7 +464,7 @@ class UserController {
     }
   }
 
-  static async forgotPassword (req, res) {
+  static async forgotPassword(req, res) {
     try {
       const user = await QzUserRegistration.findOne({ email: req.body.email })
 
@@ -505,7 +505,7 @@ class UserController {
     }
   }
 
-  static async changePassword (req, res) {
+  static async changePassword(req, res) {
     try {
       let password = req.body.newPassword
       const salt = await bcrypt.genSalt(10)
@@ -559,14 +559,12 @@ class UserController {
     }
   }
 
-  static async sendOtp (req, res) {
+  static async sendOtp(req, res) {
     try {
       const { email } = req.body
       let OTP = helpers.GenerateSixDigitCode()
 
-      const user = await QzUserRegistration.findOne({ email }).select({
-        _id: 1
-      })
+      const user = await QzUserRegistration.findOne({ email });
       if (!user)
         return helpers.SendErrorsAsResponse(
           null,
@@ -585,16 +583,15 @@ class UserController {
           }
           return helpers.SendSuccessResponse(res, response)
         })
-        .catch(err)
-      {
-        return helpers.SendErrorsAsResponse(null, res, 'Failed to send OTP')
-      }
+        .catch(err => {
+          return helpers.SendErrorsAsResponse(err, res, 'Failed to send OTP')
+        })
     } catch (err) {
       return helpers.SendErrorsAsResponse(err, res)
     }
   }
 
-  static async changeStatus (req, res) {
+  static async changeStatus(req, res) {
     try {
       if (req.body.status) {
         return helpers.SendErrorsAsResponse(
