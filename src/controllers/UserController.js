@@ -5,11 +5,8 @@ const { MailService } = require('../lib/services')
 const helpers = require('../config/helpers')
 const { QzUserRegistration, QzUserProfile } = require('../db/models')
 
-
-
 class UserController {
-  static async userSignup(req, res) {
-
+  static async userSignup (req, res) {
     try {
       const {
         user_name,
@@ -45,7 +42,7 @@ class UserController {
 
       await userRegistrationResult.validate()
 
-      const OTP = helpers.GenerateSixDigitCode();
+      const OTP = helpers.GenerateSixDigitCode()
 
       const userProfile = new QzUserProfile({
         user_id: userRegistrationResult._id,
@@ -68,12 +65,12 @@ class UserController {
         social_id,
         social_type,
         profile_pic:
-          req?.files && req.files?.profile_pic
-            ? req.files?.profile_pic[0].path
+          req.files && req.files.profile_pic
+            ? req.files.profile_pic[0].path
             : null,
         resume_file:
-          req?.files && req.files?.resume_file
-            ? req.files?.resume_file[0].path
+          req.files && req.files.resume_file
+            ? req.files.resume_file[0].path
             : null
       })
 
@@ -89,8 +86,8 @@ class UserController {
         password,
         _id,
         ...userRegistrationDoc
-      } = userRegistrationResult._doc;
-      const { _id: userId, ...userProfileDoc } = userProfile._doc;
+      } = userRegistrationResult._doc
+      const { _id: userId, ...userProfileDoc } = userProfile._doc
 
       let response = {
         status_code: 1,
@@ -104,8 +101,7 @@ class UserController {
     }
   }
 
-  static async userLogin(req, res) {
-
+  static async userLogin (req, res) {
     let user = {}
     let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     const { email } = req.body
@@ -147,12 +143,12 @@ class UserController {
         !userProfile.status
           ? 'Your account is inactive. Please contact administrator!'
           : !userProfile.is_email_verified
-            ? 'Please verify your email.'
-            : ''
+          ? 'Please verify your email.'
+          : ''
       )
     }
 
-    const isValidPassword = await user.comparePassword(req.body.password);
+    const isValidPassword = await user.comparePassword(req.body.password)
 
     if (!isValidPassword)
       return helpers.SendErrorsAsResponse(
@@ -163,8 +159,8 @@ class UserController {
 
     const token = user.generateAuthToken()
 
-    const { password, _id, ...userDoc } = user._doc;
-    const { _id: userId, ...userProfileDoc } = userProfile._doc;
+    const { password, _id, ...userDoc } = user._doc
+    const { _id: userId, ...userProfileDoc } = userProfile._doc
 
     let response = {
       status_code: 1,
@@ -175,8 +171,7 @@ class UserController {
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
 
-  static async socialLoginValidation(req, res) {
-
+  static async socialLoginValidation (req, res) {
     const { email } = req.body
     let user = ''
 
@@ -207,7 +202,7 @@ class UserController {
       const token = user.generateAuthToken()
 
       const { _id, password, ...userDoc } = user._doc
-      const { _id: userId, ...userProfileDoc } = userProfile._doc;
+      const { _id: userId, ...userProfileDoc } = userProfile._doc
 
       let response = {
         status_code: 1,
@@ -221,13 +216,10 @@ class UserController {
     }
   }
 
-  static async emailVerification(req, res) {
-
+  static async emailVerification (req, res) {
     const { email, otp } = req.body
 
     try {
-
-
       const userResult = await QzUserRegistration.findOne({
         email
       })
@@ -290,7 +282,7 @@ class UserController {
     }
   }
 
-  static async socialLogin(req, res) {
+  static async socialLogin (req, res) {
     try {
       const { mobile_no, email, user_name } = req.body
 
@@ -345,7 +337,7 @@ class UserController {
         social_id: req.body.social_id,
         social_type: req.body.social_type,
         profile_pic:
-          req?.files && req.files?.profile_pic
+          req.files && req.files.profile_pic
             ? req.files.profile_pic[0].path
             : null,
         otp: OTP,
@@ -362,7 +354,7 @@ class UserController {
 
       const token = user.generateAuthToken()
       const { password, _id, ...userDoc } = user._doc
-      const { _id: userId, ...userProfileDoc } = userProfile._doc;
+      const { _id: userId, ...userProfileDoc } = userProfile._doc
 
       let response = {
         status_code: 1,
@@ -376,9 +368,8 @@ class UserController {
     }
   }
 
-  static async profileUpdate(req, res) {
+  static async profileUpdate (req, res) {
     try {
-
       const {
         first_name,
         last_name,
@@ -415,21 +406,24 @@ class UserController {
           social_id,
           social_type,
           profile_pic:
-            req?.files && req.files?.profile_pic
-              ? req.files?.profile_pic[0].path
+            req.files && req.files.profile_pic
+              ? req.files.profile_pic[0].path
               : null,
           resume_file:
-            req?.files && req.files?.resume_file
-              ? req.files?.resume_file[0].path
+            req.files && req.files.resume_file
+              ? req.files.resume_file[0].path
               : null,
           updated_at: new Date()
         },
         { new: true }
-      );
+      )
 
       if (!user)
-
-        return helpers.SendErrorsAsResponse(null, res, "The user with the given ID was not found.");
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'The user with the given ID was not found.'
+        )
 
       const token = user.generateAuthToken()
 
@@ -439,14 +433,13 @@ class UserController {
         result: []
       }
 
-      return helpers.SendSuccessResponseWithAuthHeader(res, token, response);
-
+      return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
     } catch (err) {
-      return helpers.SendErrorsAsResponse(err, res);
+      return helpers.SendErrorsAsResponse(err, res)
     }
   }
 
-  static async details(req, res) {
+  static async details (req, res) {
     try {
       const user = await QzUserRegistration.findById(req.params.id)
       if (!user)
@@ -471,7 +464,7 @@ class UserController {
     }
   }
 
-  static async forgotPassword(req, res) {
+  static async forgotPassword (req, res) {
     try {
       const user = await QzUserRegistration.findOne({ email: req.body.email })
 
@@ -512,7 +505,7 @@ class UserController {
     }
   }
 
-  static async changePassword(req, res) {
+  static async changePassword (req, res) {
     try {
       let password = req.body.newPassword
       const salt = await bcrypt.genSalt(10)
@@ -527,7 +520,9 @@ class UserController {
           'The ID Provided is Invalid'
         )
 
-      const validPassword = await userDetails.comparePassword(req.body.oldPassword);
+      const validPassword = await userDetails.comparePassword(
+        req.body.oldPassword
+      )
 
       if (!validPassword)
         return helpers.SendErrorsAsResponse(
@@ -564,7 +559,7 @@ class UserController {
     }
   }
 
-  static async sendOtp(req, res) {
+  static async sendOtp (req, res) {
     try {
       const { email } = req.body
       let OTP = helpers.GenerateSixDigitCode()
@@ -599,7 +594,7 @@ class UserController {
     }
   }
 
-  static async changeStatus(req, res) {
+  static async changeStatus (req, res) {
     try {
       if (req.body.status) {
         return helpers.SendErrorsAsResponse(
@@ -608,7 +603,7 @@ class UserController {
           'Please Provide a Valid Argument in Body'
         )
       }
-      let status = req.body.status;
+      let status = req.body.status
 
       const user = await QzUserProfile.findByIdAndUpdate(
         req.params.id,
