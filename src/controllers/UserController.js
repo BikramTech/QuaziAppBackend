@@ -2,8 +2,10 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 
 const { MailService } = require('../lib/services')
-const helpers = require('../config/helpers')
-const { QzUserRegistration, QzUserProfile } = require('../db/models')
+const helpers = require('../config/helpers');
+const appConfig = require("../config/appConfig");
+const jwt = require('jsonwebtoken')
+const { QzUserRegistration, QzUserProfile, QzUserEmployment, QzUserProjects, QzUserCertification, QzUserApplications } = require('../db/models')
 
 class UserController {
   static async userSignup(req, res) {
@@ -11,93 +13,42 @@ class UserController {
       const {
         user_name,
         email,
-        mobile_no,
-        first_name,
-        last_name,
-        countryCode,
-        residential_address,
-        description,
-        education,
-        experience,
-        gender,
-        dob,
-        profile_summary,
-        skills,
-        marital_status,
-        languages,
-        agreement_terms_conditions,
-        social_id,
-        social_type
+        mobile_no
       } = req.body
 
       const salt = await bcrypt.genSalt(10)
       const hashedPassword = await bcrypt.hash(req.body.password, salt)
 
+      const otp = helpers.GenerateSixDigitCode()
+
       const userRegistrationResult = await new QzUserRegistration({
         user_name,
         email,
         password: hashedPassword,
-        mobile_no
-      })
+        mobile_no,
+        otp
+      });
 
-      await userRegistrationResult.validate()
+      await userRegistrationResult.save();
 
-      const OTP = helpers.GenerateSixDigitCode()
+      await MailService.sendMail(email, 'OTP For Quazi App Registration', otp);
 
-      const userProfile = new QzUserProfile({
-        user_id: userRegistrationResult._id,
-        skills,
-        first_name,
-        last_name,
-        profile_summary,
-        countryCode,
-        residential_address,
-        description,
-        education,
-        experience,
-        gender,
-        dob,
-        otp: OTP,
-        description,
-        languages,
-        marital_status,
-        agreement_terms_conditions,
-        social_id,
-        social_type,
-        profile_pic:
-          req.files && req.files.profile_pic
-            ? req.files.profile_pic[0].path
-            : null,
-        resume_file:
-          req.files && req.files.resume_file
-            ? req.files.resume_file[0].path
-            : null
-      })
-
-      await userProfile.validate()
-
-      await userRegistrationResult.save()
-      await userProfile.save()
-
-      await MailService.sendMail(email, 'OTP For Quazi App Registration', OTP)
-
-      const token = userProfile.generateAuthToken()
+      const token = userRegistrationResult.generateAuthToken();
       const {
         password,
         _id,
         ...userRegistrationDoc
-      } = userRegistrationResult._doc
-      const { _id: userId, ...userProfileDoc } = userProfile._doc
+      } = userRegistrationResult._doc;
 
       let response = {
         status_code: 1,
         message: 'Your account registration is successful',
-        result: [{ ...userRegistrationDoc, ...userProfileDoc }]
+        result: [{ ...userRegistrationDoc }]
       }
 
-      return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
+      return helpers.SendSuccessResponseWithAuthHeader(res, token, response);
     } catch (err) {
-      return helpers.SendErrorsAsResponse(err, res)
+      return helpers.SendErrorsAsResponse(err, res);
     }
   }
 
@@ -171,50 +122,50 @@ class UserController {
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
 
-  static async socialLoginValidation(req, res) {
-    const { email } = req.body
-    let user = ''
+  // static async socialLoginValidation(req, res) {
+  //   const { email } = req.body
+  //   let user = ''
 
-    try {
-      if (!email) {
-        return helpers.SendErrorsAsResponse(null, res, 'Email is required')
-      }
-      user = await QzUserRegistration.findOne({
-        email: { $regex: email, $options: 'i' }
-      })
+  //   try {
+  //     if (!email) {
+  //       return helpers.SendErrorsAsResponse(null, res, 'Email is required')
+  //     }
+  //     user = await QzUserRegistration.findOne({
+  //       email: { $regex: email, $options: 'i' }
+  //     })
 
-      if (!user) {
-        return helpers.SendErrorsAsResponse(
-          null,
-          res,
-          'The Email you entered does not exist.'
-        )
-      }
-      let userProfile = await QzUserProfile.findOne({ user_id: user._id })
-      if (userProfile && !userProfile.status) {
-        return helpers.SendErrorsAsResponse(
-          null,
-          res,
-          'Your account is inactive. Please contact administrator!'
-        )
-      }
+  //     if (!user) {
+  //       return helpers.SendErrorsAsResponse(
+  //         null,
+  //         res,
+  //         'The Email you entered does not exist.'
+  //       )
+  //     }
+  //     let userProfile = await QzUserProfile.findOne({ user_id: user._id })
+  //     if (userProfile && !userProfile.status) {
+  //       return helpers.SendErrorsAsResponse(
+  //         null,
+  //         res,
+  //         'Your account is inactive. Please contact administrator!'
+  //       )
+  //     }
 
-      const token = user.generateAuthToken()
+  //     const token = user.generateAuthToken()
 
-      const { _id, password, ...userDoc } = user._doc
-      const { _id: userId, ...userProfileDoc } = userProfile._doc
+  //     const { _id, password, ...userDoc } = user._doc
+  //     const { _id: userId, ...userProfileDoc } = userProfile._doc
 
-      let response = {
-        status_code: 1,
-        message: 'This Email is already registered',
-        result: [{ ...userDoc, ...userProfileDoc }]
-      }
+  //     let response = {
+  //       status_code: 1,
+  //       message: 'This Email is already registered',
+  //       result: [{ ...userDoc, ...userProfileDoc }]
+  //     }
 
-      return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
-    } catch (err) {
-      return helpers.SendErrorsAsResponse(err, res)
-    }
-  }
+  //     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
+  //   } catch (err) {
+  //     return helpers.SendErrorsAsResponse(err, res)
+  //   }
+  // }
 
   static async emailVerification(req, res) {
     const { email, otp } = req.body
@@ -284,7 +235,7 @@ class UserController {
 
   static async socialLogin(req, res) {
     try {
-      const { mobile_no, email, user_name } = req.body
+      const { email } = req.body
 
       let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
@@ -307,62 +258,56 @@ class UserController {
         email: { $regex: email, $options: 'i' }
       })
 
-      if (userDetails)
-        return helpers.SendErrorsAsResponse(
-          null,
-          res,
-          'Email is Already Registered.'
-        )
+      if (userDetails) {
 
+        let userProfile = await QzUserProfile.findOne({ user_id: userDetails._doc._id });
 
+        const { password, ...userDetailsDoc } = userDetails._doc;
+
+        if (userProfile) {
+          const { _id, ...userProfileDoc } = userProfile._doc;
+          const { _id: userId, ...neededUserDetailsDoc } = userDetailsDoc;
+          userDetails = { ...neededUserDetailsDoc, ...userProfileDoc };
+        }
+        else {
+          const { _id, ...neededUserDetailsDoc } = userDetailsDoc;
+          userDetails = { ...neededUserDetailsDoc, user_id: _id };
+        }
+
+        const token = jwt.sign({ _id: userDetails.user_id }, appConfig.auth.jwt_secret, { expiresIn: appConfig.auth.jwt_expires_in });
+
+        let response = {
+          status_code: 1,
+          message: "Your social login is successful",
+          result: [userDetails]
+        }
+
+        return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
+      }
+
+      var randomPassword = helpers.GenerateSixDigitCode().toString();
       const salt = await bcrypt.genSalt(10)
-      const hashedPassword = await bcrypt.hash(req.body.password, salt)
+      const hashedPassword = await bcrypt.hash(randomPassword, salt);
 
-      const user = await new QzUserRegistration({
-        user_name,
+      let user = await new QzUserRegistration({
+        user_name: email,
         email,
-        password: hashedPassword,
-        mobile_no
-      })
+        password: hashedPassword
+      });
 
-      await user.validate()
+      await user.save();
 
-      const OTP = helpers.GenerateSixDigitCode()
-
-      const userProfile = new QzUserProfile({
-        user_id: user._id,
-        first_name: req.body.first_name,
-        last_name: req.body.last_name,
-        countryCode: req.body.countryCode,
-        social_id: req.body.social_id,
-        social_type: req.body.social_type,
-        profile_pic:
-          req.files && req.files.profile_pic
-            ? req.files.profile_pic[0].path
-            : null,
-        otp: OTP,
-        dob: req.body.dob,
-        residential_address: req.body.residential_address,
-        profile_summary: req.body.profile_summary,
-        is_email_verified: true
-      })
-
-      await userProfile.validate()
-
-      await user.save()
-      await userProfile.save()
-
-      const token = user.generateAuthToken()
-      const { password, _id, ...userDoc } = user._doc
-      const { _id: userId, ...userProfileDoc } = userProfile._doc
+      const userToken = user.generateAuthToken()
+      const { password, _id, ...userDoc } = user._doc;
+      user = { ...userDoc, user_id: _id };
 
       let response = {
         status_code: 1,
         message: 'User is registered successfully!',
-        result: [{ ...userDoc, ...userProfileDoc }]
+        result: [user]
       }
 
-      return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
+      return helpers.SendSuccessResponseWithAuthHeader(res, userToken, response)
     } catch (err) {
       return helpers.SendErrorsAsResponse(err, res)
     }
@@ -415,21 +360,14 @@ class UserController {
               : null,
           updated_at: new Date()
         },
-        { new: true }
+        { new: true, upsert: true }
       )
 
-      if (!user)
-        return helpers.SendErrorsAsResponse(
-          null,
-          res,
-          'The user with the given ID was not found.'
-        )
-
-      const token = user.generateAuthToken()
+      const token = jwt.sign({ _id: req.params.id }, appConfig.auth.jwt_secret, { expiresIn: appConfig.auth.jwt_expires_in });
 
       let response = {
         status_code: 1,
-        message: 'User Profile Succesfully Updated',
+        message: 'User Profile Successfully Updated',
         result: []
       }
 
@@ -629,6 +567,407 @@ class UserController {
       return helpers.SendErrorsAsResponse(err, res, null)
     }
   }
+
+  // User Employment Api Starts :-
+
+  static async AddUserEmployment(req, res) {
+
+    try {
+
+      const { user_id, employer, designation, start_date, end_date } = req.body;
+
+      const userEmploymentModel = new QzUserEmployment({ user_id, employer, designation, start_date, end_date });
+
+      await userEmploymentModel.save();
+
+      let response = {
+        status_code: 1,
+        message: 'User employment succesfully added',
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async GetUserEmploymentsByUserId(req, res) {
+
+    try {
+
+      const userEmployments = await QzUserEmployment.find({ user_id: req.params.user_id });
+
+      let response = {
+        status_code: 1,
+        result: [userEmployments]
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async UpdateUserEmployment(req, res) {
+
+    try {
+
+      const { employer, designation, start_date, end_date } = req.body;
+
+      const userUpdatedResult = await QzUserEmployment.findByIdAndUpdate(req.params.id, { employer, designation, start_date, end_date }, { new: true });
+
+      if (!userUpdatedResult)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record exists with the provided id'
+        )
+
+      let response = {
+        status_code: 1,
+        message: "User employment successfully updated",
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async DeleteUserEmployment(req, res) {
+
+    try {
+
+      const userEmploymentDeletedResult = await QzUserEmployment.findByIdAndDelete(req.params.id);
+
+      if (!userEmploymentDeletedResult)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record exists with the provided id'
+        )
+
+      let response = {
+        status_code: 1,
+        message: "User employment successfully deleted",
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  // User Projects Api Starts :-
+
+  static async AddUserProject(req, res) {
+
+    try {
+
+      const { user_id, project_title, client_name, project_description, start_date, end_date } = req.body;
+
+      const userProjectModel = new QzUserProjects({ user_id, project_title, client_name, project_description, start_date, end_date });
+
+      await userProjectModel.save();
+
+      let response = {
+        status_code: 1,
+        message: 'User project succesfully added',
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async GetUserProjectsByUserId(req, res) {
+
+    try {
+
+      const userProjects = await QzUserProjects.find({ user_id: req.params.user_id });
+
+      if (!userProjects.length) {
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record with the provided user id'
+        )
+      }
+
+      let response = {
+        status_code: 1,
+        result: [userProjects]
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async UpdateUserProject(req, res) {
+
+    try {
+
+      const { project_title, client_name, project_description, start_date, end_date } = req.body;
+
+      const userProjectResult = await QzUserProjects.findByIdAndUpdate(req.params.id, { project_title, client_name, project_description, start_date, end_date }, { new: true });
+
+      if (!userProjectResult)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record exists with the provided id'
+        )
+
+      let response = {
+        status_code: 1,
+        message: "User project successfully updated",
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async DeleteUserProject(req, res) {
+
+    try {
+
+      const userProjectDeletedResult = await QzUserProjects.findByIdAndDelete(req.params.id);
+
+      if (!userProjectDeletedResult)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record exists with the provided id'
+        )
+
+      let response = {
+        status_code: 1,
+        message: "User project successfully deleted",
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  // User Certification Api Starts :-
+
+  static async AddUserCertification(req, res) {
+
+    try {
+
+      const { user_id, certification_name, certification_from, valid_till_date, year_of_completion_date } = req.body;
+
+      const userCertificationModel = new QzUserCertification({ user_id, certification_name, certification_from, valid_till_date, year_of_completion_date });
+
+      await userCertificationModel.save();
+
+      let response = {
+        status_code: 1,
+        message: 'User certification succesfully added',
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async GetUserCertificationsByUserId(req, res) {
+
+    try {
+
+      const userCertifications = await QzUserCertification.find({ user_id: req.params.user_id });
+
+      if (!userCertifications.length) {
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record with the provided user id'
+        )
+      }
+
+      let response = {
+        status_code: 1,
+        result: [userCertifications]
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async UpdateUserCertification(req, res) {
+
+    try {
+
+      const { certification_name, certification_from, valid_till_date, year_of_completion_date } = req.body;
+
+      const userCertificationUpdatedResult = await QzUserCertification.findByIdAndUpdate(req.params.id, { certification_name, certification_from, valid_till_date, year_of_completion_date }, { new: true });
+
+      if (!userCertificationUpdatedResult)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record exists with the provided id'
+        )
+
+      let response = {
+        status_code: 1,
+        message: "User certification successfully updated",
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async DeleteUserCertification(req, res) {
+
+    try {
+
+      const userCertificationDeletedResult = await QzUserCertification.findByIdAndDelete(req.params.id);
+
+      if (!userCertificationDeletedResult)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record exists with the provided id'
+        )
+
+      let response = {
+        status_code: 1,
+        message: "User certification successfully deleted",
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  // User Applications Api Starts :-
+
+  static async AddUserApplication(req, res) {
+
+    try {
+
+      const { user_id, job_id, status_id } = req.body;
+      const last_update_date = new Date().toISOString();
+
+      const userApplicationsModel = new QzUserApplications({ user_id, job_id, status_id, last_update_date });
+
+      await userApplicationsModel.save();
+
+      let response = {
+        status_code: 1,
+        message: 'User application succesfully added',
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async GetUserApplicationsByUserId(req, res) {
+
+    try {
+
+      const userApplications = await QzUserApplications.find({ user_id: req.params.user_id });
+
+      if (!userApplications.length) {
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record with the provided user id'
+        )
+      }
+
+      let response = {
+        status_code: 1,
+        result: [userApplications]
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
+  static async DeleteUserApplication(req, res) {
+
+    try {
+
+      const userApplicationDeletedResult = await QzUserApplications.findByIdAndDelete(req.params.id);
+
+      if (!userApplicationDeletedResult)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record exists with the provided id'
+        )
+
+      let response = {
+        status_code: 1,
+        message: "User application successfully deleted",
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    }
+    catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+
+  }
+
 }
 
 module.exports = UserController

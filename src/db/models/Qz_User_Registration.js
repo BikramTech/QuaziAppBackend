@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const uniqueValidator = require('mongoose-unique-validator')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcrypt');
+const { appConfig } = require("../../config")
 
 const QzUserRegistrationSchema = new mongoose.Schema({
   user_name: {
@@ -11,7 +12,6 @@ const QzUserRegistrationSchema = new mongoose.Schema({
   },
   mobile_no: {
     type: String,
-    required: [true, 'Mobile number is required.'],
     unique: [true, 'Mobile number is already registered!']
   },
   email: {
@@ -23,17 +23,19 @@ const QzUserRegistrationSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Password is required.']
+  },
+  otp: {
+    type: Number
   }
 })
 
 QzUserRegistrationSchema.plugin(uniqueValidator)
 
-QzUserRegistrationSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign({ _id: this._id }, process.env.jwt_secret, {
-    expiresIn: process.env.jwt_expiresin
-  })
-  return token
-}
+QzUserRegistrationSchema.methods.generateAuthToken = () => {
+
+  const token = jwt.sign({ _id: this._id }, appConfig.auth.jwt_secret, { expiresIn: appConfig.auth.jwt_expires_in });
+  return token;
+};
 
 QzUserRegistrationSchema.methods.comparePassword = function (password) {
   return bcrypt.compareSync(password, this.password);

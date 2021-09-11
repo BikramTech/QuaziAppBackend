@@ -12,7 +12,7 @@ const ParseModelValidationErrorMessages = errors => {
 
 const SendErrorsAsResponse = (err, responseCallback, errorMessage) => {
   const errorMessages =
-    err && err.errors && err.errors.length
+    err && err.errors
       ? ParseModelValidationErrorMessages(err.errors)
       : []
   return responseCallback.status(400).send({

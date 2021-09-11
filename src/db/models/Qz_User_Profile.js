@@ -1,6 +1,4 @@
-const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const { appConfig } = require("../../config")
 
 const QzUserProfileSchema = new mongoose.Schema({
     user_id: {
@@ -82,12 +80,6 @@ const QzUserProfileSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
-    otp: {
-        type: String,
-        default: null,
-        maxlength: 6,
-        minlength: 6
-    },
     role: {
         type: Number,
         default: 1,
@@ -117,10 +109,6 @@ const QzUserProfileSchema = new mongoose.Schema({
         required: true
     }
 });
-QzUserProfileSchema.methods.generateAuthToken = () => {
-    const token = jwt.sign({ _id: this._id }, appConfig.auth.jwt_secret);
-    return token;
-};
 
 const QzUserProfile = mongoose.model("Qz_User_Profile", QzUserProfileSchema);
 

@@ -18,7 +18,7 @@ module.exports = {
   },
   auth: {
     jwt_secret: process.env.jwt_secret,
-    jwt_expiresin: process.env.JWT_EXPIRES_IN || '1d'
+    jwt_expires_in: process.env.jwt_expires_in || '1d'
   },
   mail: {
     mail_domain_name: process.env.MAIL_SERVICE_DOMAIN,
