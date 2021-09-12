@@ -104,7 +104,7 @@ router.get(
 )
 // router.post('/UpdateUserApplicationStatus/:id', Authorize, UserController.UpdateUserApplicationStatus); // Need to move this route to the corporate module later
 router.delete(
-  '/DeleteUserApplication:id',
+  '/DeleteUserApplication/:id',
   Authorize,
   UserController.DeleteUserApplication
 )
