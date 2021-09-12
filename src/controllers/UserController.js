@@ -15,7 +15,6 @@ const {
 } = require('../db/models')
 
 class UserController {
-  
   static async userSignup (req, res) {
     try {
       const { user_name, email, mobile_no } = req.body
@@ -46,8 +45,9 @@ class UserController {
 
       let response = {
         status_code: 1,
-        message: 'Your account registration is successful',
-        result: [{ ...userRegistrationDoc }]
+        message:
+          'Your account registration is successful and an OTP has been sent to your email for verification',
+        result: [{ ...userRegistrationDoc, user_id: _id }]
       }
 
       return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
@@ -410,7 +410,7 @@ class UserController {
 
   static async details (req, res) {
     try {
-      const user = await QzUserRegistration.findById(req.params.id)
+      let user = await QzUserRegistration.findById(req.params.id)
       if (!user)
         return helpers.SendErrorsAsResponse(
           null,
@@ -419,13 +419,17 @@ class UserController {
         )
       let userProfile = await QzUserProfile.findOne({ user_id: user._id })
 
-      const { password, _id, ...userDoc } = user._doc
-      const { _id: userId, ...userProfileDoc } = userProfile._doc
+      const { password, otp, _id, ...userDoc } = user._doc
+
+      if (userProfile) {
+        const { _id: userId, ...userProfileDoc } = userProfile._doc
+        user = [{ ...userDoc, ...userProfileDoc }]
+      }
 
       let response = {
         status_code: 1,
         message: 'User Details Successfully Fetched',
-        result: [{ ...userDoc, ...userProfileDoc }]
+        result: [user]
       }
       return helpers.SendSuccessResponse(res, response)
     } catch (err) {
