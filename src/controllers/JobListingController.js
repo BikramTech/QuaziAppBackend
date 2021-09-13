@@ -2,13 +2,24 @@ const helpers = require('../config/helpers')
 const { QzEmployment } = require('../db/models')
 
 class JobListingController {
-
     static async addJobListing(req, res) {
         try {
-            const { job_name, job_description, job_location, job_type_id, company_name, posted_by } = req.body
+            const {
+                job_name,
+                job_description,
+                job_location,
+                job_type_id,
+                company_name,
+                posted_by
+            } = req.body
 
             const employmentModel = new QzEmployment({
-                job_name, job_description, job_location, job_type_id, company_name, posted_by
+                job_name,
+                job_description,
+                job_location,
+                job_type_id,
+                company_name,
+                posted_by
             })
 
             await employmentModel.save()
@@ -52,21 +63,18 @@ class JobListingController {
 
     static async getJobListingPagedList(req, res) {
         try {
-            const employmentModel = await QzEmployment.find();
+            const employmentModel = await QzEmployment.find({
+                posted_by: req.params.id
+            })
 
             if (!employmentModel.length) {
-                return helpers.SendErrorsAsResponse(
-                    null,
-                    res,
-                    'No records!'
-                )
+                return helpers.SendErrorsAsResponse(null, res, 'No records!')
             }
 
             let response = {
                 status_code: 1,
                 result: [employmentModel]
             }
-
 
             return helpers.SendSuccessResponse(res, response)
         } catch (err) {
@@ -74,24 +82,18 @@ class JobListingController {
         }
     }
 
-
     static async getActiveJobListingPagedList(req, res) {
         try {
-            const employmentModel = await QzEmployment.find({ is_active: true });
+            const employmentModel = await QzEmployment.find({ is_active: true })
 
             if (!employmentModel.length) {
-                return helpers.SendErrorsAsResponse(
-                    null,
-                    res,
-                    'No records!'
-                )
+                return helpers.SendErrorsAsResponse(null, res, 'No records!')
             }
 
             let response = {
                 status_code: 1,
                 result: [employmentModel]
             }
-
 
             return helpers.SendSuccessResponse(res, response)
         } catch (err) {
@@ -102,14 +104,25 @@ class JobListingController {
     static async updateJobListing(req, res) {
         try {
             const {
-                job_name, job_description, job_location, job_type_id, company_name, posted_by
-            } = req.body;
-            const last_update_date = new Date().toISOString();
+                job_name,
+                job_description,
+                job_location,
+                job_type_id,
+                company_name,
+                is_active
+            } = req.body
+            const last_update_date = new Date().toISOString()
 
             const qzEmploymentUpdatedResult = await QzEmployment.findByIdAndUpdate(
                 req.params.id,
                 {
-                    job_name, job_description, job_location, job_type_id, company_name, posted_by, creation_date, last_update_date
+                    job_name,
+                    job_description,
+                    job_location,
+                    job_type_id,
+                    company_name,
+                    last_update_date,
+                    is_active
                 },
                 { new: true }
             )
@@ -134,7 +147,6 @@ class JobListingController {
     }
 
     static async deleteJobListing(req, res) {
-
         try {
             const employmentDeletedResult = await QzEmployment.findByIdAndDelete(
                 req.params.id
@@ -153,14 +165,11 @@ class JobListingController {
                 result: []
             }
 
-
             return helpers.SendSuccessResponse(res, response)
         } catch (err) {
             helpers.SendErrorsAsResponse(err, res)
         }
     }
-
-
 }
 
-module.exports = JobListingController;
+module.exports = JobListingController
