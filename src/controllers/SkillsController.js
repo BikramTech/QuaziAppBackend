@@ -1,126 +1,134 @@
-const helpers = require("../config/helpers");
-const { QzKeySkills } = require("../db/models");
+const helpers = require('../config/helpers')
+const { QzKeySkills } = require('../db/models')
 
 class SkillsController {
-  static async addKeySkill(req, res) {
+  static async addKeySkill (req, res) {
     try {
-      const { name } = req.body;
+      const { name } = req.body
 
       const keySkills = new QzKeySkills({
-        name,
-      });
+        name
+      })
 
-      await keySkills.save();
+      await keySkills.save()
 
       let response = {
         status_code: 1,
-        message: "Key Skill added successfully",
-        result: [],
-      };
+        message: 'Key Skill added successfully',
+        result: []
+      }
 
-      return helpers.SendSuccessResponse(res, response);
+      return helpers.SendSuccessResponse(res, response)
     } catch (err) {
-      helpers.SendErrorsAsResponse(err, res);
+      helpers.SendErrorsAsResponse(err, res)
     }
   }
 
-  static async getKeySkillById(req, res) {
+  static async getKeySkillById (req, res) {
     try {
-      const keySkills = await QzKeySkills.findById(req.params.id);
+      const keySkills = await QzKeySkills.findById(req.params.id)
 
       if (!keySkills.length) {
         return helpers.SendErrorsAsResponse(
           null,
           res,
-          "No record with the provided skill id"
-        );
+          'No record with the provided skill id'
+        )
       }
 
       let response = {
         status_code: 1,
-        result: [keySkills],
-      };
+        result: [keySkills]
+      }
 
-      return helpers.SendSuccessResponse(res, response);
+      return helpers.SendSuccessResponse(res, response)
     } catch (err) {
-      helpers.SendErrorsAsResponse(err, res);
+      helpers.SendErrorsAsResponse(err, res)
     }
   }
 
-  static async getKeySkills(req, res) {
+  static async getKeySkills (req, res) {
     try {
-      const keySkills = await QzKeySkills.find();
+      const keySkills = await QzKeySkills.aggregate([
+        {
+          $project: {
+            _id: 0,
+            skillId: '$_id',
+            skillName: '$name'
+          }
+        }
+      ])
 
       if (!keySkills.length) {
-        return helpers.SendErrorsAsResponse(null, res, "No records!");
+        return helpers.SendErrorsAsResponse(null, res, 'No records!')
       }
 
       let response = {
         status_code: 1,
-        result: [keySkills],
-      };
+        result: [keySkills]
+      }
 
-      return helpers.SendSuccessResponse(res, response);
+      return helpers.SendSuccessResponse(res, response)
     } catch (err) {
-      helpers.SendErrorsAsResponse(err, res);
+      helpers.SendErrorsAsResponse(err, res)
     }
   }
 
-  static async updateKeySkill(req, res) {
+  static async updateKeySkill (req, res) {
     try {
-      const { name } = req.body;
+      const { name } = req.body
 
       const keySkillUpdatedResult = await QzKeySkills.findByIdAndUpdate(
         req.params.id,
         {
-          name,
+          name
         },
         { new: true }
-      );
+      )
 
       if (!keySkillUpdatedResult)
         return helpers.SendErrorsAsResponse(
           null,
           res,
-          "No record exists with the provided id"
-        );
+          'No record exists with the provided id'
+        )
 
       let response = {
         status_code: 1,
-        message: "Key Skill updated successfully",
-        result: [],
-      };
+        message: 'Key Skill updated successfully',
+        result: []
+      }
 
-      return helpers.SendSuccessResponse(res, response);
+      return helpers.SendSuccessResponse(res, response)
     } catch (err) {
-      helpers.SendErrorsAsResponse(err, res);
+      helpers.SendErrorsAsResponse(err, res)
     }
   }
 
-  static async deleteKeySkill(req, res) {
+  static async deleteKeySkill (req, res) {
     try {
       const keySkillDeletedResult = await QzKeySkills.findByIdAndDelete(
         req.params.id
-      );
+      )
 
       if (!keySkillDeletedResult)
         return helpers.SendErrorsAsResponse(
           null,
           res,
-          "No record exists with the provided id"
-        );
+          'No record exists with the provided id'
+        )
 
       let response = {
         status_code: 1,
-        message: "Key Skill deleted successfully",
-        result: [],
-      };
+        message: 'Key Skill deleted successfully',
+        result: []
+      }
 
-      return helpers.SendSuccessResponse(res, response);
+      return helpers.SendSuccessResponse(res, response)
     } catch (err) {
-      helpers.SendErrorsAsResponse(err, res);
+      helpers.SendErrorsAsResponse(err, res)
     }
   }
 }
 
-module.exports = SkillsController;
+module.exports = SkillsController
