@@ -5,5 +5,6 @@ router.use('/corporate-user', require('./corporateUser'));
 router.use('/company', require('./company'));
 router.use('/job-types', require('./jobTypes'));
 router.use('/job-listing', require('./jobListing'));
+router.use('/skills', require('./skills'));
 
 module.exports = router

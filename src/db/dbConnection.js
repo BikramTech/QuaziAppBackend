@@ -1,12 +1,8 @@
 const mongoose = require("mongoose");
-const { db } = require("../config/appConfig");
-
-const getConnectionString = () => {
-  return "mongodb://qz_dev_user:dev402020@52.14.156.178:61099/Quazi"
-}
+const config = require("../config/appConfig");
 
 const initDb = () => {
-  const connectionString = getConnectionString();
+  const connectionString = config.db.hostUrl;
   try {
     mongoose.connect(connectionString, {
       useNewUrlParser: true,

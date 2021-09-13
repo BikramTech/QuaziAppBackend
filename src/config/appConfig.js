@@ -9,9 +9,7 @@ module.exports = {
   db: {
     port: process.env.DB_PORT || 27017,
     database: process.env.DB_NAME || 'Quazi',
-    password: process.env.DB_PASS || 'password',
-    username: process.env.DB_USER || 'mongodb',
-    host: process.env.DB_HOST || 'localhost'
+    hostUrl: process.env.DB_HOST_URL || 'localhost'
   },
   winiston: {
     logpath: '/iLrnLogs/logs/'
