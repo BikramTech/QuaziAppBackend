@@ -2,14 +2,12 @@ var router = require('express').Router()
 const { Authorize } = require('../../middlewares')
 const { JobTypesController } = require('../../controllers')
 
-router.post('/AddJobType', Authorize, JobTypesController.addJobType)
-router.get(
-    '/GetJobTypeByJobTypeId/:id',
-    Authorize,
-    JobTypesController.getJobTypeByJobTypeId
-)
+const { AddJobTypeValidator, UpdateJobTypeValidator, GetJobTypeByJobTypeIdValidator, DeleteJobTypeValidator } = require("../../lib/validators/jobTypeValidator");
+
+router.post('/AddJobType', [Authorize, AddJobTypeValidator], JobTypesController.addJobType)
+router.get('/GetJobTypeByJobTypeId/:id', [Authorize, GetJobTypeByJobTypeIdValidator], JobTypesController.getJobTypeByJobTypeId)
 router.get('/GetJobType', Authorize, JobTypesController.getJobType)
-router.post('/UpdateJobType/:id', Authorize, JobTypesController.updateJobType)
-router.delete('/DeleteJobType/:id', Authorize, JobTypesController.deleteJobType)
+router.post('/UpdateJobType/:id', [Authorize, UpdateJobTypeValidator], JobTypesController.updateJobType)
+router.delete('/DeleteJobType/:id', [Authorize, DeleteJobTypeValidator], JobTypesController.deleteJobType)
 
 module.exports = router

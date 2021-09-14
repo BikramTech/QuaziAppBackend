@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 
 const QzUserProjectsSchema = new mongoose.Schema({
     user_id: {
-        type: String
+        type: String,
+        required: [true, "User Id is required"]
     },
     project_title: {
         type: String,

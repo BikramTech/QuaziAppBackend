@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 
 const QzUserCertificationSchema = new mongoose.Schema({
     user_id: {
-        type: String
+        type: String,
+        required: [true, "User Id is required"]
     },
     certification_name: {
         type: String,

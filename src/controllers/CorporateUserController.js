@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken')
 const { QzCrUserRegistration, QzCrUserProfile } = require('../db/models')
 
 class CorporateUserController {
-  static async userSignup (req, res) {
+  static async userSignup(req, res) {
     try {
       const { user_name, email, mobile_no } = req.body
 
@@ -54,7 +54,7 @@ class CorporateUserController {
     }
   }
 
-  static async emailVerification (req, res) {
+  static async emailVerification(req, res) {
     const { email, otp } = req.body
 
     try {
@@ -105,7 +105,7 @@ class CorporateUserController {
     }
   }
 
-  static async userProfileUpdate (req, res) {
+  static async userProfileUpdate(req, res) {
     try {
       const {
         first_name,
@@ -153,7 +153,7 @@ class CorporateUserController {
     }
   }
 
-  static async userLogin (req, res) {
+  static async userLogin(req, res) {
     let user = {}
     let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     const { email } = req.body
@@ -199,8 +199,8 @@ class CorporateUserController {
         !userProfile.is_active
           ? 'Your account is inactive. Please contact administrator!'
           : !userProfile.is_email_verified
-          ? 'Please verify your email.'
-          : ''
+            ? 'Please verify your email.'
+            : ''
       )
     }
 

@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 
 const QzUserEmploymentSchema = new mongoose.Schema({
     user_id: {
-        type: String
+        type: String,
+        required: [true, "User Id is required"]
     },
     employer: {
         type: String,
