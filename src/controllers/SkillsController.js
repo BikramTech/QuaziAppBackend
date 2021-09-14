@@ -65,7 +65,7 @@ class SkillsController {
 
       let response = {
         status_code: 1,
-        result: [keySkills]
+        result: keySkills
       }
 
       return helpers.SendSuccessResponse(res, response)

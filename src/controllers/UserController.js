@@ -645,7 +645,7 @@ class UserController {
 
       let response = {
         status_code: 1,
-        result: [userEmployments]
+        result: userEmployments
       }
 
       return helpers.SendSuccessResponse(res, response)
@@ -760,7 +760,7 @@ class UserController {
 
       let response = {
         status_code: 1,
-        result: [userProjects]
+        result: userProjects
       }
 
       return helpers.SendSuccessResponse(res, response)
@@ -885,7 +885,7 @@ class UserController {
 
       let response = {
         status_code: 1,
-        result: [userCertifications]
+        result: userCertifications
       }
 
       return helpers.SendSuccessResponse(res, response)
@@ -1002,7 +1002,7 @@ class UserController {
 
       let response = {
         status_code: 1,
-        result: [userApplications]
+        result: userApplications
       }
 
       return helpers.SendSuccessResponse(res, response)
