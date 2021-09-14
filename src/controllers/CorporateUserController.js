@@ -231,6 +231,101 @@ class CorporateUserController {
 
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
+
+  static async forgotPassword (req, res) {
+    try {
+      const user = await QzCrUserRegistration.findOne({ email: req.body.email })
+
+      if (!user)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'The Email provided is Invalid'
+        )
+
+      let password = req.body.newPassword
+      const salt = await bcrypt.genSalt(10)
+      password = await bcrypt.hash(password, salt)
+
+      await QzCrUserRegistration.findByIdAndUpdate(
+        user._id,
+        {
+          password: password,
+          updated: new Date()
+        },
+        { new: true }
+      )
+
+      await MailService.sendMail(
+        user.email,
+        'Password reset mail from Quazi',
+        'Your password has been reset successfully '
+      )
+
+      let response = {
+        status_code: 1,
+        message: 'Password reset successful.',
+        result: []
+      }
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res)
+    }
+  }
+
+  static async changePassword (req, res) {
+    try {
+      let password = req.body.newPassword
+      const salt = await bcrypt.genSalt(10)
+      password = await bcrypt.hash(password, salt)
+
+      const userDetails = await QzCrUserRegistration.findById(req.params.id)
+
+      if (!userDetails)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'The ID Provided is Invalid'
+        )
+
+      const validPassword = await userDetails.comparePassword(
+        req.body.oldPassword
+      )
+
+      if (!validPassword)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'Old password doesnot match with our records.'
+        )
+
+      const user = await QzCrUserRegistration.findByIdAndUpdate(
+        req.params.id,
+        {
+          password: password,
+          updated: new Date()
+        },
+        { new: true }
+      )
+
+      if (!user)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'The ID Provided is Invalid'
+        )
+
+      let response = {
+        status_code: 1,
+        message: 'Password Changed Successfully',
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res)
+    }
+  }
 }
 
 module.exports = CorporateUserController
