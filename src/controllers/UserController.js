@@ -126,9 +126,7 @@ class UserController {
     let userResult = userDoc
     if (userProfile) {
       const { _id: userId, ...userProfileDoc } = userProfile._doc
-      userResult = [
-        { ...userDoc, ...userProfileDoc, is_profile_complete: true }
-      ]
+      userResult = { ...userDoc, ...userProfileDoc, is_profile_complete: true }
     } else {
       userResult = { ...userResult, is_profile_complete: false, user_id: _id }
     }
@@ -431,7 +429,7 @@ class UserController {
 
       if (userProfile) {
         const { _id: userId, ...userProfileDoc } = userProfile._doc
-        user = [{ ...userDoc, ...userProfileDoc }]
+        user = { ...userDoc, ...userProfileDoc }
       }
 
       let response = {
