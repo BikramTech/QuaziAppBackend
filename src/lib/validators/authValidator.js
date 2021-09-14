@@ -12,4 +12,6 @@ const CrUserSignupLoginValidator = [authRule.CrUserSignupLoginValidationRules, V
 
 const UserIdValidator = [authRule.UserIdValidationRule, ValidateModel];
 
-module.exports = { LoginValidator, EmailVerificationValidator, CrUserSignupLoginValidator, UserSignupLoginValidator, UserIdValidator };
+const ChangePasswordValidator = [authRule.ChangePasswordValidationRule, ValidateModel];
+
+module.exports = { LoginValidator, EmailVerificationValidator, CrUserSignupLoginValidator, UserSignupLoginValidator, UserIdValidator, ChangePasswordValidator };

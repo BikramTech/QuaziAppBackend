@@ -2,9 +2,9 @@ var router = require("express").Router();
 const { UserController } = require("../../controllers");
 const { Authorize, DocUpload } = require("../../middlewares");
 
-const { LoginValidator, EmailVerificationValidator, UserIdValidator } = require("../../lib/validators/authValidator");
+const { LoginValidator, EmailVerificationValidator, UserIdValidator, ChangePasswordValidator } = require("../../lib/validators/authValidator");
 const { EmailValidator } = require("../../lib/validators/commonValidator");
-
+const { UserProfileUpdateValidator } = require("../../lib/validators/userProfileValidator");
 const { AddUserEmploymentValidator, UpdateUserEmploymentValidator, GetUserEmploymentsByUserIdValidator, DeleteUserEmploymentRule } = require("../../lib/validators/userEmployementValidator");
 const { AddUserCertificationValidator, UpdateUserCertificationValidator, GetUserCertificationsByUserIdValidator, DeleteUserCertificationValidator } = require("../../lib/validators/userCertificationValidator");
 const { AddUserProjectsValidator, UpdateUserProjectsValidator, GetUserProjectsByUserIdValidator, DeleteUserProjectsValidator } = require("../../lib/validators/userProjectsValidator");
@@ -21,12 +21,12 @@ router.post("/Login", LoginValidator, UserController.userLogin);
 // router.post('/SocialLoginValidation', UserController.socialLoginValidation);
 router.post("/EmailVerification", EmailVerificationValidator, UserController.emailVerification);
 router.post("/SocialLogin", EmailValidator, UserController.socialLogin);
-router.patch("/ProfileUpdate/:id", [Authorize, DocumentUpload], UserController.profileUpdate);
-router.get("/Details/:id", Authorize, UserController.details);
+router.patch("/ProfileUpdate/:id", [Authorize, UserProfileUpdateValidator, DocumentUpload], UserController.profileUpdate);
+router.get("/Details/:id", [Authorize, UserIdValidator], UserController.details);
 router.post("/ForgotPassword", EmailValidator, UserController.forgotPassword);
-router.patch("/ChangePassword/:id", Authorize, UserController.changePassword);
-router.post("/SendOtp", UserController.sendOtp);
-router.patch("/ChangeStatus/:id", Authorize, UserController.changeStatus);
+router.patch("/ChangePassword/:id", [Authorize, ChangePasswordValidator], UserController.changePassword);
+router.post("/SendOtp", EmailValidator, UserController.sendOtp);
+router.patch("/ChangeStatus/:id", [Authorize, UserIdValidator], UserController.changeStatus);
 
 //User Employment routes
 router.post("/AddUserEmployment", [Authorize, AddUserEmploymentValidator], UserController.AddUserEmployment);

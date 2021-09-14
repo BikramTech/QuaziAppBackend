@@ -28,10 +28,13 @@ const CrUserSignupLoginValidationRules = [
 
 const UserIdValidationRule = [check("id").isMongoId().withMessage("Invalid User Id")];
 
+const ChangePasswordValidationRule = [check("id").isMongoId().withMessage("Invalid User Id"), check("newPassword").not().isEmpty().withMessage("Please enter new password")];
+
 module.exports = {
   LoginValidationRules,
   EmailVerificationValidationRules,
   UserSignupLoginValidationRules,
   CrUserSignupLoginValidationRules,
-  UserIdValidationRule
+  UserIdValidationRule,
+  ChangePasswordValidationRule
 };
