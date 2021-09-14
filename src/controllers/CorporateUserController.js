@@ -187,7 +187,8 @@ class CorporateUserController {
       return helpers.SendErrorsAsResponse(
         null,
         res,
-        'Please verify your email to procced'
+        'Please verify your email to procced',
+        3
       )
     }
     let userProfile = await QzCrUserProfile.findOne({ user_id: user._id })
