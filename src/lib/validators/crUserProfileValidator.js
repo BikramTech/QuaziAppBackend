@@ -1,8 +1,11 @@
-const crUserProfileValidateRule = require("./validation-rules/userProfileRule");
-const { ValidateModel } = require("../../middlewares");
+const crUserProfileValidateRule = require('./validation-rules/userProfileRule')
+const { ValidateModel } = require('../../middlewares')
 
-const CrUserProfileUpdateValidator = [crUserProfileValidateRule.UpdateUserProfileRule, ValidateModel];
+const CrUserProfileUpdateValidator = [
+  crUserProfileValidateRule.UpdateCrUserProfileRule,
+  ValidateModel
+]
 
 module.exports = {
-    CrUserProfileUpdateValidator
+  CrUserProfileUpdateValidator
 }

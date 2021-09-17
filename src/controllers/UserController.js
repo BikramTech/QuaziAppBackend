@@ -13,6 +13,7 @@ const {
   QzUserCertification,
   QzUserApplications
 } = require('../db/models')
+const ObjectId = require('mongodb').ObjectID
 
 class UserController {
   static async userSignup (req, res) {
@@ -429,6 +430,8 @@ class UserController {
       const { password, otp, _id, ...userDoc } = user._doc
 
       if (userProfile) {
+        debugger
+        const skillsSet = userProfile._doc.skills
         const { _id: userId, ...userProfileDoc } = userProfile._doc
         user = { ...userDoc, ...userProfileDoc }
       }
@@ -963,13 +966,24 @@ class UserController {
 
   static async AddUserApplication (req, res) {
     try {
-      const { user_id, job_id, status_id } = req.body
+      const { user_id, job_id } = req.body
       const last_update_date = new Date().toISOString()
 
+      const alreadyApplied = await QzUserApplications.findOne({
+        user_id,
+        job_id
+      })
+      if (alreadyApplied) {
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'You have already applied for this job. Please check in your applied jobs section'
+        )
+      }
       const userApplicationsModel = new QzUserApplications({
         user_id,
         job_id,
-        status_id,
+        status_id: 1,
         last_update_date
       })
 
@@ -977,7 +991,7 @@ class UserController {
 
       let response = {
         status_code: 1,
-        message: 'User application succesfully added',
+        message: 'Your job application has been submitted',
         result: []
       }
 
@@ -992,15 +1006,40 @@ class UserController {
       const userApplications = await QzUserApplications.find({
         user_id: req.params.user_id
       })
-
       if (!userApplications.length) {
         return helpers.SendErrorsAsResponse(
           null,
           res,
           'No record with the provided user id'
         )
-      }
+      } else {
+        const jobIds = userApplications.map(x =>
+          mongoose.Types.ObjectId(x._doc.job_id)
+        )
 
+        const userJobs = await QzUserEmployment.find({ _id: { $in: jobIds } })
+
+        const userAppSubmitted = userApplications._doc.aggregate([
+          {
+            $project: {
+              _id: 0,
+              application_id: '$_id',
+              creation_date: 1,
+              last_updated_date: 1,
+              user_id: 1,
+              job_id: 1,
+              status_id: 1,
+              jobDetails: userJobs.filter(x => x._id == job_id)
+            }
+          }
+        ])
+        let response1 = {
+          status_code: 1,
+          result: userAppSubmitted
+        }
+
+        return helpers.SendSuccessResponse(res, response1)
+      }
       let response = {
         status_code: 1,
         result: userApplications
