@@ -11,12 +11,13 @@ const {
   QzUserEmployment,
   QzUserProjects,
   QzUserCertification,
-  QzUserApplications
+  QzUserApplications,
+  QzEmployment
 } = require('../db/models')
 const ObjectId = require('mongodb').ObjectID
 
 class UserController {
-  static async userSignup (req, res) {
+  static async userSignup(req, res) {
     try {
       const { user_name, email, mobile_no } = req.body
 
@@ -62,7 +63,7 @@ class UserController {
     }
   }
 
-  static async userLogin (req, res) {
+  static async userLogin(req, res) {
     let user = {}
     let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     const { email } = req.body
@@ -108,8 +109,8 @@ class UserController {
         !userProfile.status
           ? 'Your account is inactive. Please contact administrator!'
           : !userProfile.is_email_verified
-          ? 'Please verify your email.'
-          : ''
+            ? 'Please verify your email.'
+            : ''
       )
     }
 
@@ -186,7 +187,7 @@ class UserController {
   //   }
   // }
 
-  static async emailVerification (req, res) {
+  static async emailVerification(req, res) {
     const { email, otp } = req.body
 
     try {
@@ -256,7 +257,7 @@ class UserController {
     }
   }
 
-  static async socialLogin (req, res) {
+  static async socialLogin(req, res) {
     try {
       const { email } = req.body
 
@@ -348,7 +349,7 @@ class UserController {
     }
   }
 
-  static async profileUpdate (req, res) {
+  static async profileUpdate(req, res) {
     try {
       const {
         first_name,
@@ -365,7 +366,10 @@ class UserController {
         languages,
         social_id,
         social_type
-      } = req.body
+      } = req.body;
+
+      const userProfile = new QzUserProfile({ ...req.body, user_id: req.params.id });
+      await userProfile.validate();
 
       const user = await QzUserProfile.findOneAndUpdate(
         { user_id: req.params.id },
@@ -380,7 +384,6 @@ class UserController {
           education,
           experience,
           dob,
-          description,
           languages,
           marital_status,
           social_id,
@@ -416,7 +419,7 @@ class UserController {
     }
   }
 
-  static async details (req, res) {
+  static async details(req, res) {
     try {
       let user = await QzUserRegistration.findById(req.params.id)
       if (!user)
@@ -447,7 +450,7 @@ class UserController {
     }
   }
 
-  static async forgotPassword (req, res) {
+  static async forgotPassword(req, res) {
     try {
       const user = await QzUserRegistration.findOne({ email: req.body.email })
 
@@ -488,7 +491,7 @@ class UserController {
     }
   }
 
-  static async changePassword (req, res) {
+  static async changePassword(req, res) {
     try {
       let password = req.body.newPassword
       const salt = await bcrypt.genSalt(10)
@@ -542,7 +545,7 @@ class UserController {
     }
   }
 
-  static async sendOtp (req, res) {
+  static async sendOtp(req, res) {
     try {
       const { email } = req.body
       let OTP = helpers.GenerateSixDigitCode()
@@ -574,7 +577,7 @@ class UserController {
     }
   }
 
-  static async changeStatus (req, res) {
+  static async changeStatus(req, res) {
     try {
       if (req.body.status) {
         return helpers.SendErrorsAsResponse(
@@ -615,7 +618,7 @@ class UserController {
 
   // User Employment Api Starts :-
 
-  static async AddUserEmployment (req, res) {
+  static async AddUserEmployment(req, res) {
     try {
       const { user_id, employer, designation, start_date, end_date } = req.body
 
@@ -641,7 +644,7 @@ class UserController {
     }
   }
 
-  static async GetUserEmploymentsByUserId (req, res) {
+  static async GetUserEmploymentsByUserId(req, res) {
     try {
       const userEmployments = await QzUserEmployment.find({
         user_id: req.params.user_id
@@ -658,7 +661,7 @@ class UserController {
     }
   }
 
-  static async UpdateUserEmployment (req, res) {
+  static async UpdateUserEmployment(req, res) {
     try {
       const { employer, designation, start_date, end_date } = req.body
 
@@ -687,7 +690,7 @@ class UserController {
     }
   }
 
-  static async DeleteUserEmployment (req, res) {
+  static async DeleteUserEmployment(req, res) {
     try {
       const userEmploymentDeletedResult = await QzUserEmployment.findByIdAndDelete(
         req.params.id
@@ -714,7 +717,7 @@ class UserController {
 
   // User Projects Api Starts :-
 
-  static async AddUserProject (req, res) {
+  static async AddUserProject(req, res) {
     try {
       const {
         user_id,
@@ -748,7 +751,7 @@ class UserController {
     }
   }
 
-  static async GetUserProjectsByUserId (req, res) {
+  static async GetUserProjectsByUserId(req, res) {
     try {
       const userProjects = await QzUserProjects.find({
         user_id: req.params.user_id
@@ -773,7 +776,7 @@ class UserController {
     }
   }
 
-  static async UpdateUserProject (req, res) {
+  static async UpdateUserProject(req, res) {
     try {
       const {
         project_title,
@@ -814,7 +817,7 @@ class UserController {
     }
   }
 
-  static async DeleteUserProject (req, res) {
+  static async DeleteUserProject(req, res) {
     try {
       const userProjectDeletedResult = await QzUserProjects.findByIdAndDelete(
         req.params.id
@@ -841,7 +844,7 @@ class UserController {
 
   // User Certification Api Starts :-
 
-  static async AddUserCertification (req, res) {
+  static async AddUserCertification(req, res) {
     try {
       const {
         user_id,
@@ -873,7 +876,7 @@ class UserController {
     }
   }
 
-  static async GetUserCertificationsByUserId (req, res) {
+  static async GetUserCertificationsByUserId(req, res) {
     try {
       const userCertifications = await QzUserCertification.find({
         user_id: req.params.user_id
@@ -898,7 +901,7 @@ class UserController {
     }
   }
 
-  static async UpdateUserCertification (req, res) {
+  static async UpdateUserCertification(req, res) {
     try {
       const {
         certification_name,
@@ -937,7 +940,7 @@ class UserController {
     }
   }
 
-  static async DeleteUserCertification (req, res) {
+  static async DeleteUserCertification(req, res) {
     try {
       const userCertificationDeletedResult = await QzUserCertification.findByIdAndDelete(
         req.params.id
@@ -964,7 +967,7 @@ class UserController {
 
   // User Applications Api Starts :-
 
-  static async AddUserApplication (req, res) {
+  static async AddUserApplication(req, res) {
     try {
       const { user_id, job_id } = req.body
       const last_update_date = new Date().toISOString()
@@ -1001,45 +1004,27 @@ class UserController {
     }
   }
 
-  static async GetUserApplicationsByUserId (req, res) {
+  static async GetUserApplicationsByUserId(req, res) {
     try {
-      const userApplications = await QzUserApplications.find({
+
+      let userApplications = await QzUserApplications.find({
         user_id: req.params.user_id
+      }).populate({ path: 'job_id', model: QzEmployment }).populate({ path: 'user_id', model: QzUserRegistration, select: 'email user_name -_id' });
+
+      userApplications = userApplications.map(x => {
+        const { job_id, user_id, ...userApplicationDetails } = x._doc
+        return { ...userApplicationDetails, jobDetails: job_id, userDetails: { ...user_id._doc } }
       })
+
       if (!userApplications.length) {
         return helpers.SendErrorsAsResponse(
           null,
           res,
           'No record with the provided user id'
         )
-      } else {
-        const jobIds = userApplications.map(x =>
-          mongoose.Types.ObjectId(x._doc.job_id)
-        )
-
-        const userJobs = await QzUserEmployment.find({ _id: { $in: jobIds } })
-
-        const userAppSubmitted = userApplications._doc.aggregate([
-          {
-            $project: {
-              _id: 0,
-              application_id: '$_id',
-              creation_date: 1,
-              last_updated_date: 1,
-              user_id: 1,
-              job_id: 1,
-              status_id: 1,
-              jobDetails: userJobs.filter(x => x._id == job_id)
-            }
-          }
-        ])
-        let response1 = {
-          status_code: 1,
-          result: userAppSubmitted
-        }
-
-        return helpers.SendSuccessResponse(res, response1)
       }
+
+
       let response = {
         status_code: 1,
         result: userApplications
@@ -1051,7 +1036,7 @@ class UserController {
     }
   }
 
-  static async DeleteUserApplication (req, res) {
+  static async DeleteUserApplication(req, res) {
     try {
       const userApplicationDeletedResult = await QzUserApplications.findByIdAndDelete(
         req.params.id

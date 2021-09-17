@@ -3,10 +3,12 @@ const mongoose = require("mongoose");
 const QzUserApplicationsSchema = new mongoose.Schema({
     user_id: {
         type: String,
+        ref: "qz_user_registration",
         required: [true, "User Id is required"]
     },
     job_id: {
-        type: String,
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: "qz_employment",
         required: [true, "Job Id is required"]
     },
     creation_date: {

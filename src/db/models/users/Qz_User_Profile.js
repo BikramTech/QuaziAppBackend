@@ -88,10 +88,9 @@ const QzUserProfileSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  // is_email_verified: {
-  //     type: Boolean,
-  //     default: false,
-  // },
+  description: {
+    type: String
+  },
   created_at: {
     type: Date,
     default: Date.now
@@ -105,8 +104,7 @@ const QzUserProfileSchema = new mongoose.Schema({
     enum: [1, 2]
   },
   profile_pic: {
-    type: String,
-    required: [true, "Profile Pic is required"]
+    type: String
   }
 })
 
