@@ -659,7 +659,7 @@ class UserController {
       let response = {
         status_code: 1,
         message: 'User employment succesfully added',
-        result: []
+        result: [userEmploymentModel]
       }
 
       return helpers.SendSuccessResponse(res, response)
@@ -766,7 +766,7 @@ class UserController {
       let response = {
         status_code: 1,
         message: 'User project succesfully added',
-        result: []
+        result: [userProjectModel]
       }
 
       return helpers.SendSuccessResponse(res, response)
@@ -891,7 +891,7 @@ class UserController {
       let response = {
         status_code: 1,
         message: 'User certification succesfully added',
-        result: []
+        result: [userCertificationModel]
       }
 
       return helpers.SendSuccessResponse(res, response)
