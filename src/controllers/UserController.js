@@ -428,14 +428,38 @@ class UserController {
           res,
           'The user with the given ID was not found.'
         )
-      let userProfile = await QzUserProfile.findOne({ user_id: user._id })
+      let userProfile = await QzUserProfile.aggregate([
+        { "$match": { "user_id": user._doc._id.toString() } },
+        {
+          "$lookup": {
+            "from": "qz_user_employments",
+            "localField": "user_id",
+            "foreignField": "user_id",
+            "as": "user_employments"
+          }
+        },
+        {
+          "$lookup": {
+            "from": "qz_user_projects",
+            "localField": "user_id",
+            "foreignField": "user_id",
+            "as": "user_projects"
+          }
+        },
+        {
+          "$lookup": {
+            "from": "qz_user_certifications",
+            "localField": "user_id",
+            "foreignField": "user_id",
+            "as": "user_certifications"
+          }
+        }
+      ]);
 
       const { password, otp, _id, ...userDoc } = user._doc
 
       if (userProfile) {
-        debugger
-        const skillsSet = userProfile._doc.skills
-        const { _id: userId, ...userProfileDoc } = userProfile._doc
+        const { _id: userId, ...userProfileDoc } = userProfile[0]
         user = { ...userDoc, ...userProfileDoc }
       }
 
