@@ -4,7 +4,8 @@ const { mail } = require('../../config/appConfig')
 class MailService {
   static mailTransporter () {
     return nodemailer.createTransport({
-      host: 'smtpout.secureserver.net',
+      // host: 'smtpout.secureserver.net',
+      host: 'smtp.gmail.com',
       tls: {
         ciphers: 'SSLv3'
       },
