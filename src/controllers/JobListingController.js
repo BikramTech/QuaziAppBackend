@@ -170,6 +170,27 @@ class JobListingController {
       helpers.SendErrorsAsResponse(err, res)
     }
   }
+
+  static async getJobsForOpenListing (req, res) {
+    try {
+      const employmentModel = await QzEmployment.find({
+        is_active: true
+      }).limit(10)
+
+      if (!employmentModel.length) {
+        return helpers.SendErrorsAsResponse(null, res, 'No records!')
+      }
+
+      let response = {
+        status_code: 1,
+        result: employmentModel
+      }
+
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      helpers.SendErrorsAsResponse(err, res)
+    }
+  }
 }
 
 module.exports = JobListingController

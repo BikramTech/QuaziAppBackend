@@ -7,6 +7,7 @@ router.post('/AddJobListing', [Authorize, AddJobListingValidator], JobListingCon
 router.get('/GetJobListingById/:id', [Authorize, GetJobListingByIdValidator], JobListingController.getJobListingById)
 router.get('/GetJobListingPagedList/:id', [Authorize, GetJobListingPagedListValidator], JobListingController.getJobListingPagedList)
 router.get('/GetActiveJobListingPagedList', Authorize, JobListingController.getActiveJobListingPagedList)
+router.get('/getJobsForOpenListing', JobListingController.getActiveJobListingPagedList)
 router.patch('/UpdateJobListing/:id', [Authorize, UpdateJobListingValidator], JobListingController.updateJobListing)
 router.delete('/DeleteJobListing/:id', [Authorize, DeleteJobListingValidator], JobListingController.deleteJobListing)
 
