@@ -213,7 +213,7 @@ class CorporateUserController {
         'Invalid username or password.'
       )
 
-    const token = user.generateAuthToken()
+    const token = user.generateAuthToken({ _id: user._doc._id })
 
     const { password, otp, is_email_verified, _id, ...userDoc } = user._doc
     let userResult = userDoc
@@ -232,7 +232,7 @@ class CorporateUserController {
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
 
-  static async forgotPassword (req, res) {
+  static async forgotPassword(req, res) {
     try {
       const user = await QzCrUserRegistration.findOne({ email: req.body.email })
 
@@ -273,7 +273,7 @@ class CorporateUserController {
     }
   }
 
-  static async changePassword (req, res) {
+  static async changePassword(req, res) {
     try {
       let password = req.body.newPassword
       const salt = await bcrypt.genSalt(10)

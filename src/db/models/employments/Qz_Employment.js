@@ -36,6 +36,11 @@ const QzEmploymentSchema = new mongoose.Schema({
   is_active: {
     type: Boolean,
     default: true
+  },
+  listing_type: {
+    type: String,
+    required: [true, "Listing type is required"],
+    enum: ["job", "training", "workshop"]
   }
 })
 

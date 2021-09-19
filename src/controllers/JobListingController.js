@@ -1,8 +1,9 @@
 const helpers = require('../config/helpers')
-const { QzEmployment } = require('../db/models')
+const { QzEmployment, QzUserApplications } = require('../db/models')
+const mongoose = require("mongoose");
 
 class JobListingController {
-  static async addJobListing (req, res) {
+  static async addJobListing(req, res) {
     try {
       const {
         job_name,
@@ -36,7 +37,7 @@ class JobListingController {
     }
   }
 
-  static async getJobListingById (req, res) {
+  static async getJobListingById(req, res) {
     try {
       const employmentModel = await QzEmployment.find({
         _id: req.params.id
@@ -61,7 +62,7 @@ class JobListingController {
     }
   }
 
-  static async getJobListingPagedList (req, res) {
+  static async getJobListingPagedList(req, res) {
     try {
       const employmentModel = await QzEmployment.find({
         posted_by: req.params.id
@@ -82,7 +83,7 @@ class JobListingController {
     }
   }
 
-  static async getActiveJobListingPagedList (req, res) {
+  static async getActiveJobListingPagedList(req, res) {
     try {
       const employmentModel = await QzEmployment.find({ is_active: true })
 
@@ -101,7 +102,7 @@ class JobListingController {
     }
   }
 
-  static async updateJobListing (req, res) {
+  static async updateJobListing(req, res) {
     try {
       const {
         job_name,
@@ -146,7 +147,7 @@ class JobListingController {
     }
   }
 
-  static async deleteJobListing (req, res) {
+  static async deleteJobListing(req, res) {
     try {
       const employmentDeletedResult = await QzEmployment.findByIdAndDelete(
         req.params.id
@@ -171,11 +172,48 @@ class JobListingController {
     }
   }
 
-  static async getJobsForOpenListing (req, res) {
+  static async getJobsForOpenListing(req, res) {
     try {
-      const employmentModel = await QzEmployment.find({
-        is_active: true
-      }).limit(10)
+      let userApplication = await QzUserApplications.aggregate(
+        [
+          {
+            "$match": {
+              "user_id": req?.user.userId
+            }
+          },
+          {
+            "$group": {
+              "_id": null,
+              "applied_job_ids": {
+                "$push": "$job_id"
+              }
+            }
+          },
+          { "$limit": 10 }
+        ]
+      );
+
+      let applied_job_ids = [];
+      const doesUserHaveSomeAlreadyAppliedJobs = userApplication[0] && userApplication[0].applied_job_ids && userApplication[0].applied_job_ids.length;
+
+      if (doesUserHaveSomeAlreadyAppliedJobs) {
+        applied_job_ids = userApplication[0].applied_job_ids.map(x => x.toString());
+        applied_job_ids = [...new Set(applied_job_ids)];
+      }
+
+
+      let employmentModel = await QzEmployment.aggregate([
+        { "$match": { "is_active": true } }
+      ])
+
+      if (doesUserHaveSomeAlreadyAppliedJobs) {
+        employmentModel = employmentModel.map(x => {
+          const isAlreadyAppliedJob = applied_job_ids.includes(x._id.toString());
+          x.is_already_applied = isAlreadyAppliedJob;
+          return x;
+        });
+      }
+
 
       if (!employmentModel.length) {
         return helpers.SendErrorsAsResponse(null, res, 'No records!')

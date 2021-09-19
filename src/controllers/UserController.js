@@ -123,7 +123,7 @@ class UserController {
         'Invalid username or password.'
       )
 
-    const token = user.generateAuthToken()
+    const token = user.generateAuthToken({ _id: user._id });
 
     const { password, otp, is_email_verified, _id, ...userDoc } = user._doc
     let userResult = userDoc
@@ -333,7 +333,7 @@ class UserController {
 
       await user.save()
 
-      const userToken = user.generateAuthToken()
+      const userToken = user.generateAuthToken({ _id: userDetails._doc._id })
       const { password, is_email_verified, _id, ...userDoc } = user._doc
       user = { ...userDoc, user_id: _id }
 
