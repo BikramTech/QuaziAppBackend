@@ -42,7 +42,9 @@ class UserController {
         emailVerificationOtp
       )
 
-      const token = userRegistrationResult.generateAuthToken()
+      const token = userRegistrationResult.generateAuthToken({
+        _id: userRegistrationResult._doc._id
+      })
       const {
         password,
         _id,

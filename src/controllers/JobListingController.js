@@ -88,7 +88,7 @@ class JobListingController {
       let userApplication = await QzUserApplications.aggregate([
         {
           $match: {
-            user_id: req?.user.userId
+            user_id: req.user.userId
           }
         },
         {

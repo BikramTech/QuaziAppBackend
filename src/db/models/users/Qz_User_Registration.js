@@ -35,7 +35,7 @@ const QzUserRegistrationSchema = new mongoose.Schema({
 
 QzUserRegistrationSchema.plugin(uniqueValidator)
 
-QzUserRegistrationSchema.methods.generateAuthToken = (jwt_payload) => {
+QzUserRegistrationSchema.methods.generateAuthToken = jwt_payload => {
   const token = jwt.sign(jwt_payload, appConfig.auth.jwt_secret, {
     expiresIn: appConfig.auth.jwt_expires_in
   })
