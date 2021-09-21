@@ -11,7 +11,8 @@ class JobListingController {
         job_location,
         job_type_id,
         company_name,
-        posted_by
+        posted_by,
+        listing_type
       } = req.body
 
       const employmentModel = new QzEmployment({
@@ -20,7 +21,8 @@ class JobListingController {
         job_location,
         job_type_id,
         company_name,
-        posted_by
+        posted_by,
+        listing_type
       })
 
       await employmentModel.save()
