@@ -1,8 +1,8 @@
 const helpers = require('../config/helpers')
-const { QzCompanyTypes } = require('../db/models')
+const { QzCompanyTypes, QzEmployment, QzCrUserProfile } = require('../db/models')
 
 class CompanyController {
-  static async addCompanyType (req, res) {
+  static async addCompanyType(req, res) {
     try {
       const { name } = req.body
 
@@ -24,7 +24,7 @@ class CompanyController {
     }
   }
 
-  static async getCompanyTypeByCompanyTypeId (req, res) {
+  static async getCompanyTypeByCompanyTypeId(req, res) {
     try {
       const companyType = await QzCompanyTypes.findById(req.params.id)
 
@@ -47,7 +47,7 @@ class CompanyController {
     }
   }
 
-  static async getCompanyTypesList (req, res) {
+  static async getCompanyTypesList(req, res) {
     try {
       const companyTypes = await QzCompanyTypes.find()
 
@@ -66,7 +66,7 @@ class CompanyController {
     }
   }
 
-  static async getActiveCompanyTypesList (req, res) {
+  static async getActiveCompanyTypesList(req, res) {
     try {
       const companyTypes = await QzCompanyTypes.find({ is_active: true })
 
@@ -85,7 +85,7 @@ class CompanyController {
     }
   }
 
-  static async updateCompanyType (req, res) {
+  static async updateCompanyType(req, res) {
     try {
       const { name, is_active } = req.body
 
@@ -117,7 +117,7 @@ class CompanyController {
     }
   }
 
-  static async deleteCompanyType (req, res) {
+  static async deleteCompanyType(req, res) {
     try {
       const companyTypeDeletedResult = await QzCompanyTypes.findByIdAndDelete(
         req.params.id
@@ -134,6 +134,40 @@ class CompanyController {
         status_code: 1,
         message: 'Company Type successfully deleted',
         result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      helpers.SendErrorsAsResponse(err, res)
+    }
+  }
+
+  static async getCompaniesWithActiveJobs(req, res) {
+    try {
+      const companiesResult = await QzCrUserProfile.aggregate([
+        { $match: { is_active: true } },
+        { $addFields: { "company_id": { $toString: "$_id" } } },
+        {
+          $lookup: {
+            from: "qz_employments",
+            localField: "company_id",
+            foreignField: "posted_by",
+            as: "posted_jobs"
+          }
+        }
+      ]);
+
+      if (!companiesResult)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record exists with the provided id'
+        )
+
+      let response = {
+        status_code: 1,
+        message: '',
+        result: [companiesResult]
       }
 
       return helpers.SendSuccessResponse(res, response)

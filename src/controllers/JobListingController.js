@@ -3,7 +3,7 @@ const { QzEmployment, QzUserApplications } = require('../db/models')
 const mongoose = require('mongoose')
 
 class JobListingController {
-  static async addJobListing (req, res) {
+  static async addJobListing(req, res) {
     try {
       const {
         job_name,
@@ -20,7 +20,8 @@ class JobListingController {
         job_location,
         job_type_id,
         company_name,
-        posted_by
+        posted_by,
+        is_active: true
       })
 
       await employmentModel.save()
@@ -37,11 +38,28 @@ class JobListingController {
     }
   }
 
-  static async getJobListingById (req, res) {
+  static async getJobListingById(req, res) {
     try {
-      const employmentModel = await QzEmployment.find({
-        _id: req.params.id
-      })
+      const employmentModel = await QzEmployment.aggregate([
+        { "$match": { "_id": req.params.id } },
+        {
+          $lookup: {
+            from: "qz_job_types",
+            localField: "job_type_id",
+            foreignField: "_id",
+            as: "job_type_details"
+          },
+
+        },
+        {
+          $addFields: {
+            "job_type_name": { $arrayElemAt: ["$job_type_details.name", 0] }
+          }
+        },
+        {
+          $project: { "job_type_details": 0 }
+        }
+      ])
 
       if (!employmentModel.length) {
         return helpers.SendErrorsAsResponse(
@@ -62,11 +80,62 @@ class JobListingController {
     }
   }
 
-  static async getJobListingPagedList (req, res) {
+  static async getJobListingPagedList(req, res) {
     try {
-      const employmentModel = await QzEmployment.find({
-        posted_by: req.params.id
-      })
+      const employmentModel = await QzEmployment.aggregate([
+        { "$match": { "posted_by": req.params.id } },
+        {
+          $lookup: {
+            from: "qz_job_types",
+            localField: "job_type_id",
+            foreignField: "_id",
+            as: "job_type_details"
+          }
+        },
+        {
+          $lookup: {
+            from: "qz_user_applications",
+            localField: "_id",
+            foreignField: "job_id",
+            as: "user_application_details"
+          }
+        },
+        { $unwind: "$user_application_details" },
+        {
+          $addFields: {
+            "job_type_name": { $arrayElemAt: ["$job_type_details.name", 0] },
+            "user_id": { $toString: "$user_application_details.user_id" }
+          }
+        },
+        {
+          $lookup: {
+            from: "qz_user_profiles",
+            localField: "user_application_details.user_id",
+            foreignField: "user_id",
+            as: "user_details"
+          }
+        },
+
+        { $unwind: "$user_details" },
+        { $set: { "user_details.applied_on": "$user_application_details.creation_date" } },
+        { $unset: ["job_type_details", "user_details._id", "user_details.dob", "user_details.countryCode", "user_details.education", "user_details.experience", "user_details.languages", "user_details.marital_status", "user_details.profile_pic", "user_details.profile_summary", "user_details.residential_address", "user_details.resume_file", "user_details.skills", "user_details.social_id", "user_details.social_type", "user_details.updated_at", "user_details.description"] },
+        {
+          $group: {
+            _id: "$_id",
+            "job_name": { "$first": "$job_name" },
+            "job_description": { "$first": "$job_description" },
+            "job_location": { "$first": "$job_location" },
+            "job_type_id": { "$first": "$job_type_id" },
+            "company_name": { "$first": "$company_name" },
+            "posted_by": { "$first": "$posted_by" },
+            "creation_date": { "$first": "$creation_date" },
+            "last_update_date": { "$first": "$last_update_date" },
+            "is_active": { "$first": "$is_active" },
+            "job_type_name": { "$first": "$job_type_name" },
+            "users": { "$push": "$user_details" }
+          }
+        }
+      ])
 
       if (!employmentModel.length) {
         return helpers.SendErrorsAsResponse(null, res, 'No records!')
@@ -83,7 +152,7 @@ class JobListingController {
     }
   }
 
-  static async getActiveJobListingPagedList (req, res) {
+  static async getActiveJobListingPagedList(req, res) {
     try {
       let userApplication = await QzUserApplications.aggregate([
         {
@@ -98,8 +167,7 @@ class JobListingController {
               $push: '$job_id'
             }
           }
-        },
-        { $limit: 10 }
+        }
       ])
 
       let applied_job_ids = []
@@ -116,7 +184,24 @@ class JobListingController {
       }
 
       let employmentModel = await QzEmployment.aggregate([
-        { $match: { is_active: true } }
+        { "$match": { "is_active": true } },
+        {
+          $lookup: {
+            from: "qz_job_types",
+            localField: "job_type_id",
+            foreignField: "_id",
+            as: "job_type_details"
+          },
+
+        },
+        {
+          $addFields: {
+            "job_type_name": { $arrayElemAt: ["$job_type_details.name", 0] }
+          }
+        },
+        {
+          $project: { "job_type_details": 0 }
+        }
       ])
 
       if (doesUserHaveSomeAlreadyAppliedJobs) {
@@ -142,7 +227,7 @@ class JobListingController {
     }
   }
 
-  static async updateJobListing (req, res) {
+  static async updateJobListing(req, res) {
     try {
       const {
         job_name,
@@ -187,7 +272,7 @@ class JobListingController {
     }
   }
 
-  static async deleteJobListing (req, res) {
+  static async deleteJobListing(req, res) {
     try {
       const employmentDeletedResult = await QzEmployment.findByIdAndDelete(
         req.params.id
@@ -212,11 +297,31 @@ class JobListingController {
     }
   }
 
-  static async getJobsForOpenListing (req, res) {
+  static async getJobsForOpenListing(req, res) {
     try {
-      const employmentModel = await QzEmployment.find({
-        is_active: true
-      }).limit(10)
+      const employmentModel = await QzEmployment.aggregate([
+        { "$match": { "is_active": true } },
+        {
+          $lookup: {
+            from: "qz_job_types",
+            localField: "job_type_id",
+            foreignField: "_id",
+            as: "job_type_details"
+          },
+
+        },
+        {
+          $addFields: {
+            "job_type_name": { $arrayElemAt: ["$job_type_details.name", 0] }
+          }
+        },
+        {
+          $project: { "job_type_details": 0 }
+        },
+        {
+          $limit: 10
+        }
+      ])
 
       if (!employmentModel.length) {
         return helpers.SendErrorsAsResponse(null, res, 'No records!')
