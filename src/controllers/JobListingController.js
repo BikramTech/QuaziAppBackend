@@ -102,7 +102,12 @@ class JobListingController {
             as: "user_application_details"
           }
         },
-        { $unwind: "$user_application_details" },
+        {
+          $unwind: {
+            path: "$user_application_details",
+            preserveNullAndEmptyArrays: true
+          }
+        },
         {
           $addFields: {
             "job_type_name": { $arrayElemAt: ["$job_type_details.name", 0] },
@@ -117,8 +122,12 @@ class JobListingController {
             as: "user_details"
           }
         },
-
-        { $unwind: "$user_details" },
+        {
+          $unwind: {
+            path: "$user_details",
+            preserveNullAndEmptyArrays: true
+          }
+        },
         { $set: { "user_details.applied_on": "$user_application_details.creation_date" } },
         { $unset: ["job_type_details", "user_details._id", "user_details.dob", "user_details.countryCode", "user_details.education", "user_details.experience", "user_details.languages", "user_details.marital_status", "user_details.profile_pic", "user_details.profile_summary", "user_details.residential_address", "user_details.resume_file", "user_details.skills", "user_details.social_id", "user_details.social_type", "user_details.updated_at", "user_details.description"] },
         {

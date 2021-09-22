@@ -142,17 +142,22 @@ class CompanyController {
     }
   }
 
-  static async getCompaniesWithActiveJobs(req, res) {
+  static async getActiveCompaniesWithJobsCount(req, res) {
     try {
       const companiesResult = await QzCrUserProfile.aggregate([
         { $match: { is_active: true } },
-        { $addFields: { "company_id": { $toString: "$_id" } } },
+        { $addFields: { "company_id": { $toString: "$user_id" } } },
         {
           $lookup: {
             from: "qz_employments",
             localField: "company_id",
             foreignField: "posted_by",
             as: "posted_jobs"
+          }
+        },
+        {
+          $project: {
+            "company_id": "$company_id", "company_name": "$company_name", "posted_jobs_count": { "$size": "$posted_jobs" }
           }
         }
       ]);
@@ -168,6 +173,31 @@ class CompanyController {
         status_code: 1,
         message: '',
         result: [companiesResult]
+      }
+
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      helpers.SendErrorsAsResponse(err, res)
+    }
+  }
+
+  static async getActiveJobsByCompanyId(req, res) {
+    try {
+      const jobsResult = await QzEmployment.aggregate([
+        { $match: { posted_by: req.params.id } }
+      ]);
+
+      if (!jobsResult)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No record exists with the provided id'
+        )
+
+      let response = {
+        status_code: 1,
+        message: '',
+        result: [jobsResult]
       }
 
       return helpers.SendSuccessResponse(res, response)

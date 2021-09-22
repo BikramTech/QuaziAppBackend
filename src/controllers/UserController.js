@@ -458,7 +458,17 @@ class UserController {
             foreignField: 'user_id',
             as: 'user_certifications'
           }
-        }
+        },
+        {
+          $lookup: {
+            from: 'qz_user_applications',
+            localField: 'user_id',
+            foreignField: 'user_id',
+            as: 'user_applied_job_applications'
+          }
+        },
+        { $set: { "applied_jobs_count": { "$size": "$user_applied_job_applications" } } },
+        { $unset: ["user_applied_job_applications"] }
       ])
 
       const { password, otp, _id, ...userDoc } = user._doc

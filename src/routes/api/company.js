@@ -9,6 +9,7 @@ router.get('/GetActiveCompanyTypesList', Authorize, CompanyController.getActiveC
 router.get('/GetCompanyTypesList', Authorize, CompanyController.getCompanyTypesList)
 router.post('/UpdateCompanyType/:id', [Authorize, UpdateCompanyTypeValidator], CompanyController.updateCompanyType)
 router.delete('/DeleteCompanyType/:id', [Authorize, DeleteCompanyTypeValidator], CompanyController.deleteCompanyType)
-router.get('/GetCompaniesWithActiveJobs', CompanyController.getCompaniesWithActiveJobs)
+router.get('/GetCompaniesWithActiveJobs', Authorize, CompanyController.getActiveCompaniesWithJobsCount)
+router.get('/GetActiveJobsByCompanyId/:id', Authorize, CompanyController.getActiveJobsByCompanyId)
 
 module.exports = router

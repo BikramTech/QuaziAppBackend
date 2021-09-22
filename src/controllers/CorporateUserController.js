@@ -130,7 +130,8 @@ class CorporateUserController {
           company_profile,
           complete_address,
           company_type_id,
-          agreement_terms_conditions
+          agreement_terms_conditions,
+          is_active: true
         },
         { new: true, upsert: true }
       )
