@@ -85,7 +85,6 @@ class JobListingController {
   static async getJobListingPagedList(req, res) {
     try {
       const employmentModel = await QzEmployment.aggregate([
-        { "$match": { "posted_by": req.params.id } },
         {
           $lookup: {
             from: "qz_job_types",
@@ -348,6 +347,144 @@ class JobListingController {
       helpers.SendErrorsAsResponse(err, res)
     }
   }
+
+  static async searchJobs(req, res) {
+    try {
+      const { location, jobType, keyword } = req.body;
+
+      const sortBy = req.body.sortBy || 'creation_date';
+      const sortOrder = req.body.sortOrder || -1;
+      const recordsPerPage = req.body.recordsPerPage || 10;
+      const pageNumber = req.body.pageNumber || 0;
+
+      let sortObject = '{' + '"' + sortBy + '": ' + sortOrder + '}';
+      sortObject = JSON.parse(sortObject);
+      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage);
+
+      let query = JobListingController.getSearchJobQuery(
+        location,
+        jobType,
+        keyword
+      );
+
+      let searchedJobsCount = await QzEmployment.aggregate([
+        {
+          $addFields: {
+            job_type_objectid: { $toObjectId: "$job_type_id" },
+          },
+        },
+        {
+          $lookup: {
+            from: "qz_job_types",
+            localField: "job_type_objectid",
+            foreignField: "_id",
+            as: "qz_job_types",
+          },
+        },
+        {
+          $addFields: {
+            job_type: {
+              $arrayElemAt: ["$qz_job_types.name", 0],
+            },
+          },
+        },
+        {
+          $match: query,
+        },
+        {
+          $project: {
+            qz_job_types: 0
+          },
+        },
+        {
+          $count: "total_jobs_count"
+        }
+      ]);
+
+      let searchedJobs = await QzEmployment.aggregate([
+        {
+          $addFields: {
+            job_type_objectid: { $toObjectId: "$job_type_id" },
+          },
+        },
+        {
+          $lookup: {
+            from: "qz_job_types",
+            localField: "job_type_objectid",
+            foreignField: "_id",
+            as: "qz_job_types",
+          },
+        },
+        {
+          $addFields: {
+            job_type_name: {
+              $arrayElemAt: ["$qz_job_types.name", 0],
+            },
+          },
+        },
+        {
+          $match: query,
+        },
+        {
+          $project: {
+            qz_job_types: 0
+          },
+        },
+        { $sort: sortObject },
+        { $skip: recordsToSkip },
+        { $limit: parseInt(recordsPerPage) }
+      ]);
+
+      let response = {
+        status_code: 1,
+        result: [{ searchedJobs, total_jobs_count: searchedJobsCount[0].total_jobs_count }]
+      }
+
+      return helpers.SendSuccessResponse(res, response);
+    } catch (err) {
+      helpers.SendErrorsAsResponse(err, res);
+    }
+  }
+
+  static getSearchJobQuery(location, jobtype, keyword) {
+    let query = {};
+
+    if (location || jobtype) {
+      query["$and"] = [];
+    }
+
+    if (location) {
+      query["$and"].push({
+        job_location: { $regex: location, $options: "i" },
+      });
+    }
+    if (jobtype) {
+      query["$and"].push({
+        "qz_job_types.name": { $regex: jobtype, $options: "i" },
+      });
+    }
+    if (keyword) {
+      let orQuery = {};
+      orQuery["$or"] = [];
+
+      const likeRegex = new RegExp(`^.*${keyword}.*$`, "is");
+      orQuery["$or"].push({ job_name: likeRegex });
+      orQuery["$or"].push({ job_description: likeRegex });
+      orQuery["$or"].push({ job_location: likeRegex });
+      orQuery["$or"].push({ company_name: likeRegex });
+      orQuery["$or"].push({ listing_type: likeRegex });
+
+      let andQuery = query["$and"];
+
+      if (andQuery) {
+        andQuery.push(orQuery);
+      } else {
+        query = orQuery;
+      }
+    }
+    return query;
+  }
+
 }
 
 module.exports = JobListingController

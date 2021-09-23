@@ -10,5 +10,6 @@ router.get('/GetActiveJobListingPagedList', Authorize, JobListingController.getA
 router.get('/getJobsForOpenListing', JobListingController.getJobsForOpenListing)
 router.patch('/UpdateJobListing/:id', [Authorize, UpdateJobListingValidator], JobListingController.updateJobListing)
 router.delete('/DeleteJobListing/:id', [Authorize, DeleteJobListingValidator], JobListingController.deleteJobListing)
+router.post('/SearchJobs', JobListingController.searchJobs);
 
 module.exports = router
