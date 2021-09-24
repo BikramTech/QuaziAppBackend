@@ -4,7 +4,7 @@ const { JobListingController } = require('../../controllers')
 const { AddJobListingValidator, UpdateJobListingValidator, GetJobListingByIdValidator, GetJobListingPagedListValidator, DeleteJobListingValidator } = require("../../lib/validators/jobListingValidator");
 
 router.post('/AddJobListing', [Authorize, AddJobListingValidator], JobListingController.addJobListing)
-router.get('/GetJobListingById/:id', [Authorize, GetJobListingByIdValidator], JobListingController.getJobListingById)
+router.get('/GetJobListingById/:id', Authorize, JobListingController.getJobListingById)
 router.get('/GetJobListingPagedList/:id', [Authorize, GetJobListingPagedListValidator], JobListingController.getJobListingPagedList)
 router.get('/GetActiveJobListingPagedList', Authorize, JobListingController.getActiveJobListingPagedList)
 router.get('/getActiveInternshipListingPagedList', Authorize, JobListingController.getActiveInternshipListingPagedList)

@@ -43,7 +43,7 @@ class JobListingController {
   static async getJobListingById (req, res) {
     try {
       const employmentModel = await QzEmployment.aggregate([
-        { $match: { _id: req.params.id } },
+        { $match: { _id: mongoose.Types.ObjectId(req.params.id) } },
         {
           $lookup: {
             from: 'qz_job_types',
@@ -59,6 +59,101 @@ class JobListingController {
         },
         {
           $project: { job_type_details: 0 }
+        },
+        { $addFields: { posted_by_id: { $toObjectId: '$posted_by' } } },
+        {
+          $lookup: {
+            from: 'qz_cr_user_profiles',
+            localField: 'posted_by_id',
+            foreignField: 'user_id',
+            as: 'posted_user_details'
+          }
+        },
+        {
+          $addFields: {
+            posted_by_user: {
+              $arrayElemAt: ['$posted_user_details.company_name', 0]
+            }
+          }
+        },
+        {
+          $unset: ['posted_user_details', 'posted_by_id']
+        },
+        {
+          $lookup: {
+            from: 'qz_user_applications',
+            localField: '_id',
+            foreignField: 'job_id',
+            as: 'user_application_details'
+          }
+        },
+        {
+          $unwind: {
+            path: '$user_application_details',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $addFields: {
+            job_type_name: { $arrayElemAt: ['$job_type_details.name', 0] },
+            user_id: { $toString: '$user_application_details.user_id' }
+          }
+        },
+        {
+          $lookup: {
+            from: 'qz_user_profiles',
+            localField: 'user_application_details.user_id',
+            foreignField: 'user_id',
+            as: 'user_details'
+          }
+        },
+        {
+          $unwind: {
+            path: '$user_details',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $set: {
+            'user_details.applied_on': '$user_application_details.creation_date'
+          }
+        },
+        {
+          $unset: [
+            'job_type_details',
+            'user_details._id',
+            'user_details.dob',
+            'user_details.countryCode',
+            'user_details.education',
+            'user_details.experience',
+            'user_details.languages',
+            'user_details.marital_status',
+            'user_details.profile_pic',
+            'user_details.profile_summary',
+            'user_details.residential_address',
+            'user_details.resume_file',
+            'user_details.skills',
+            'user_details.social_id',
+            'user_details.social_type',
+            'user_details.updated_at',
+            'user_details.description'
+          ]
+        },
+        {
+          $group: {
+            _id: '$_id',
+            job_name: { $first: '$job_name' },
+            job_description: { $first: '$job_description' },
+            job_location: { $first: '$job_location' },
+            job_type_id: { $first: '$job_type_id' },
+            company_name: { $first: '$company_name' },
+            posted_by: { $first: '$posted_by' },
+            creation_date: { $first: '$creation_date' },
+            last_update_date: { $first: '$last_update_date' },
+            is_active: { $first: '$is_active' },
+            job_type_name: { $first: '$job_type_name' },
+            users: { $push: '$user_details' }
+          }
         }
       ])
 
