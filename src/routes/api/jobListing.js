@@ -5,11 +5,11 @@ const { AddJobListingValidator, UpdateJobListingValidator, GetJobListingByIdVali
 
 router.post('/AddJobListing', [Authorize, AddJobListingValidator], JobListingController.addJobListing)
 router.get('/GetJobListingById/:id', Authorize, JobListingController.getJobListingById)
-router.get('/GetJobListingPagedList/:id', [Authorize, GetJobListingPagedListValidator], JobListingController.getJobListingPagedList)
-router.get('/GetActiveJobListingPagedList', Authorize, JobListingController.getActiveJobListingPagedList)
-router.get('/getActiveInternshipListingPagedList', Authorize, JobListingController.getActiveInternshipListingPagedList)
-router.get('/getActiveWorkshopListingPagedList', Authorize, JobListingController.getActiveWorkshopListingPagedList)
-router.get('/getJobsForOpenListing', JobListingController.getJobsForOpenListing)
+router.post('/GetJobListingPagedList/:id', Authorize, JobListingController.getJobListingPagedList)
+router.post('/GetActiveJobListingPagedList', Authorize, JobListingController.getActiveJobListingPagedList)
+router.post('/getActiveInternshipListingPagedList', Authorize, JobListingController.getActiveInternshipListingPagedList)
+router.post('/getActiveWorkshopListingPagedList', Authorize, JobListingController.getActiveWorkshopListingPagedList)
+router.post('/getJobsForOpenListing', JobListingController.getJobsForOpenListing)
 router.patch('/UpdateJobListing/:id', [Authorize, UpdateJobListingValidator], JobListingController.updateJobListing)
 router.delete('/DeleteJobListing/:id', [Authorize, DeleteJobListingValidator], JobListingController.deleteJobListing)
 router.post('/SearchJobs', JobListingController.searchJobs);
