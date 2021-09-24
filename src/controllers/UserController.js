@@ -1057,6 +1057,11 @@ class UserController {
 
   static async GetUserApplicationsByUserId (req, res) {
     try {
+      const sortBy = 'creation_date'
+      const sortOrder = -1
+      let sortObject = '{' + '"' + sortBy + '": ' + sortOrder + '}'
+      sortObject = JSON.parse(sortObject)
+
       let userApplications = await QzUserApplications.aggregate([
         { $match: { user_id: req.params.user_id } },
         {
@@ -1097,7 +1102,9 @@ class UserController {
             status_name: { $arrayElemAt: ['$status_details.status_name', 0] }
           }
         },
-        { $unset: ['userId', 'statusId', 'user_details', 'status_details'] }
+        { $unset: ['userId', 'statusId', 'user_details', 'status_details'] },
+
+        { $sort: sortObject }
       ])
 
       if (!userApplications.length) {
