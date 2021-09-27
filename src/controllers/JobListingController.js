@@ -12,7 +12,8 @@ class JobListingController {
         job_type_id,
         company_name,
         posted_by,
-        listing_type
+        listing_type,
+        skills
       } = req.body
 
       const employmentModel = new QzEmployment({
@@ -23,7 +24,8 @@ class JobListingController {
         company_name,
         posted_by,
         is_active: true,
-        listing_type
+        listing_type,
+        skills
       })
 
       await employmentModel.save()
@@ -151,6 +153,7 @@ class JobListingController {
             creation_date: { $first: '$creation_date' },
             last_update_date: { $first: '$last_update_date' },
             is_active: { $first: '$is_active' },
+            skills: { $first: '$skills' },
             job_type_name: { $first: '$job_type_name' },
             users: { $push: '$user_details' }
           }
@@ -289,6 +292,7 @@ class JobListingController {
             creation_date: { $first: '$creation_date' },
             last_update_date: { $first: '$last_update_date' },
             is_active: { $first: '$is_active' },
+            skills: { $first: '$skills' },
             job_type_name: { $first: '$job_type_name' },
             users: { $push: '$user_details' },
             posted_by_user: { $first: '$posted_by_user' }
@@ -438,7 +442,8 @@ class JobListingController {
         job_location,
         job_type_id,
         company_name,
-        is_active
+        is_active,
+        skills
       } = req.body
       const last_update_date = new Date().toISOString()
 
@@ -451,7 +456,8 @@ class JobListingController {
           job_type_id,
           company_name,
           last_update_date,
-          is_active
+          is_active,
+          skills
         },
         { new: true }
       )
@@ -597,11 +603,16 @@ class JobListingController {
           $project: {
             qz_job_types: 0
           }
-        },
-        {
-          $count: 'total_jobs_count'
         }
-      ])
+      ]);
+
+      if (!searchedJobsCount.length) {
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'No records'
+        )
+      }
 
       let searchedJobs = await QzEmployment.aggregate([
         {
@@ -642,7 +653,7 @@ class JobListingController {
         result: [
           {
             searchedJobs,
-            total_jobs_count: searchedJobsCount[0].total_jobs_count
+            total_jobs_count: searchedJobs.length
           }
         ]
       }
@@ -929,6 +940,55 @@ class JobListingController {
       let response = {
         status_code: 1,
         result: employmentModel
+      }
+
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      helpers.SendErrorsAsResponse(err, res)
+    }
+  }
+
+  static async getJobLocationSuggestions(req, res) {
+    try {
+
+      const { keyword } = req.params;
+
+      if (!keyword) {
+        let response = {
+          status_code: 1,
+          result: []
+        }
+
+        return helpers.SendSuccessResponse(res, response)
+      }
+
+      const searchLocationRegex = new RegExp(`^.*${keyword}.*$`, 'is');
+
+
+      const locationSuggestionsResult = await QzEmployment.aggregate([{
+        $match: { $or: [{ job_location: searchLocationRegex }] }
+      },
+      {
+        "$group": {
+          "_id": null,
+          "job_locations": { "$addToSet": { "$toUpper": "$job_location" } }
+        }
+      }])
+
+      if (!locationSuggestionsResult || !locationSuggestionsResult.length) {
+        let response = {
+          status_code: 1,
+          result: []
+        }
+
+        return helpers.SendSuccessResponse(res, response)
+      }
+
+
+
+      let response = {
+        status_code: 1,
+        result: locationSuggestionsResult[0].job_locations
       }
 
       return helpers.SendSuccessResponse(res, response)

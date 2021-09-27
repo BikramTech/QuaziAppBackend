@@ -16,5 +16,8 @@ const QzJobTypes = require("./jobs/Qz_Job_Types");
 
 const QzEmployment = require("./employments/Qz_Employment");
 
+const QzUserEducation = require("./users/Qz_User_Education");
+const QzTermsConditions = require("./termsAndConditions/Qz_Terms_Conditions");
 
-module.exports = { QzUserRegistration, QzUserProfile, QzKeySkills, QzUserEmployment, QzUserProjects, QzUserCertification, QzUserApplications, QzApplicationStatus, QzCrUserRegistration, QzCompanyTypes, QzCrUserProfile, QzJobTypes, QzEmployment };
+
+module.exports = { QzUserRegistration, QzUserProfile, QzKeySkills, QzUserEmployment, QzUserProjects, QzUserCertification, QzUserApplications, QzApplicationStatus, QzCrUserRegistration, QzCompanyTypes, QzCrUserProfile, QzJobTypes, QzEmployment, QzUserEducation, QzTermsConditions };

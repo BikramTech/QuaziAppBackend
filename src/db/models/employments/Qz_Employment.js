@@ -41,7 +41,10 @@ const QzEmploymentSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Listing type is required'],
     enum: ['job', 'internship', 'workshop']
-  }
+  }, skills: {
+    type: Array,
+    default: null
+  },
 })
 
 const QzEmployment = mongoose.model('Qz_Employment', QzEmploymentSchema)
