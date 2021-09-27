@@ -6,7 +6,7 @@ const { AddJobTypeValidator, UpdateJobTypeValidator, GetJobTypeByJobTypeIdValida
 
 router.post('/AddJobType', [Authorize, AddJobTypeValidator], JobTypesController.addJobType)
 router.get('/GetJobTypeByJobTypeId/:id', [Authorize, GetJobTypeByJobTypeIdValidator], JobTypesController.getJobTypeByJobTypeId)
-router.get('/GetJobType', Authorize, JobTypesController.getJobType)
+router.get('/GetJobType', JobTypesController.getJobType)
 router.post('/UpdateJobType/:id', [Authorize, UpdateJobTypeValidator], JobTypesController.updateJobType)
 router.delete('/DeleteJobType/:id', [Authorize, DeleteJobTypeValidator], JobTypesController.deleteJobType)
 
