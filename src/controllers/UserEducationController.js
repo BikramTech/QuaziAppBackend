@@ -6,10 +6,10 @@ class UserEducationController {
 
     static async AddUserEducation(req, res) {
         try {
-            const { name, field_of_study, institute_name, country, user_id } = req.body;
+            const { name, field_of_study, institute_name, country, user_id, year_of_passing, course_type } = req.body;
 
             const userEducationModel = new QzUserEducation({
-                name, field_of_study, institute_name, country
+                name, field_of_study, institute_name, country, year_of_passing, course_type
             });
             userEducationModel._doc.user_id = mongoose.Types.ObjectId(user_id)
 
@@ -78,7 +78,7 @@ class UserEducationController {
 
     static async UpdateUserEducation(req, res) {
         try {
-            const { name, field_of_study, institute_name, country } = req.body;
+            const { name, field_of_study, institute_name, country, year_of_passing, course_type } = req.body;
 
             const userEducationModel = new QzUserEducation(req.body);
             await userEducationModel.validate();
@@ -86,7 +86,7 @@ class UserEducationController {
             const qzUserEducationUpdatedResult = await QzUserEducation.findByIdAndUpdate(
                 req.params.id,
                 {
-                    name, field_of_study, institute_name, country
+                    name, field_of_study, institute_name, country, year_of_passing, course_type
                 },
                 { new: true }
             )

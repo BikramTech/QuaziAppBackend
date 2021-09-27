@@ -17,6 +17,13 @@ const QzUserEducationSchema = new mongoose.Schema({
         type: String,
         required: [true, "Country is required"]
     },
+    year_of_passing: {
+        type: String
+    },
+    course_type: {
+        type: String,
+        enum: ["Part Time", "Full Time", "Correspondence/Distance-Education"]
+    },
     user_id: {
         type: mongoose.Types.ObjectId,
         required: [true, "User Id is required"]
