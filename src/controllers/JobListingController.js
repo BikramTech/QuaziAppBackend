@@ -3,7 +3,7 @@ const { QzEmployment, QzUserApplications } = require('../db/models')
 const mongoose = require('mongoose')
 
 class JobListingController {
-  static async addJobListing(req, res) {
+  static async addJobListing (req, res) {
     try {
       const {
         job_name,
@@ -42,7 +42,7 @@ class JobListingController {
     }
   }
 
-  static async getJobListingById(req, res) {
+  static async getJobListingById (req, res) {
     try {
       const employmentModel = await QzEmployment.aggregate([
         { $match: { _id: mongoose.Types.ObjectId(req.params.id) } },
@@ -179,10 +179,9 @@ class JobListingController {
     }
   }
 
-  static async getJobListingPagedList(req, res) {
+  static async getJobListingPagedList (req, res) {
     try {
-
-      const { location, jobType, keyword } = req.body;
+      const { location, jobType, keyword } = req.body
 
       const sortBy = req.body.sortBy || 'creation_date'
       const sortOrder = req.body.sortOrder || -1
@@ -191,11 +190,15 @@ class JobListingController {
 
       let sortObject = '{' + '"' + sortBy + '": ' + sortOrder + '}'
       sortObject = JSON.parse(sortObject)
-      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage);
+      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage)
 
-      const query = JobListingController.getSearchJobQuery(location, jobType, keyword);
+      const query = JobListingController.getSearchJobQuery(
+        location,
+        jobType,
+        keyword
+      )
 
-      const employmentModel = await QzEmployment.aggregate([
+      const jobDetails = await QzEmployment.aggregate([
         { $match: { posted_by: req.params.id } },
         {
           $lookup: {
@@ -306,13 +309,63 @@ class JobListingController {
         { $limit: parseInt(recordsPerPage) }
       ])
 
-      if (!employmentModel.length) {
-        return helpers.SendErrorsAsResponse(null, res, 'No records!')
+      let searchedJobsCount = await QzEmployment.aggregate([
+        { $match: { posted_by: req.params.id } },
+        {
+          $addFields: {
+            job_type_objectid: { $toObjectId: '$job_type_id' }
+          }
+        },
+        {
+          $lookup: {
+            from: 'qz_job_types',
+            localField: 'job_type_objectid',
+            foreignField: '_id',
+            as: 'qz_job_types'
+          }
+        },
+        {
+          $addFields: {
+            job_type: {
+              $arrayElemAt: ['$qz_job_types.name', 0]
+            }
+          }
+        },
+        {
+          $match: query
+        },
+        {
+          $project: {
+            qz_job_types: 0
+          }
+        },
+        {
+          $count: 'total_jobs_count'
+        }
+      ])
+
+      if (!jobDetails.length) {
+        let noDataResponse = {
+          status_code: 2,
+          result: [
+            {
+              jobDetails: [],
+              total_jobs_count: 0
+            }
+          ],
+          message: 'No Records found!'
+        }
+        return helpers.SendSuccessResponse(res, noDataResponse)
       }
 
       let response = {
         status_code: 1,
-        result: employmentModel
+        result: [
+          {
+            jobDetails,
+            total_jobs_count: searchedJobsCount[0].total_jobs_count
+          }
+        ]
       }
 
       return helpers.SendSuccessResponse(res, response)
@@ -321,9 +374,9 @@ class JobListingController {
     }
   }
 
-  static async getActiveJobListingPagedList(req, res) {
+  static async getActiveJobListingPagedList (req, res) {
     try {
-      const { location, job_type, keyword } = req.body;
+      const { location, jobType, keyword } = req.body
       const sortBy = req.body.sortBy || 'creation_date'
       const sortOrder = req.body.sortOrder || -1
       const recordsPerPage = req.body.recordsPerPage || 10
@@ -331,16 +384,20 @@ class JobListingController {
 
       let sortObject = '{' + '"' + sortBy + '": ' + sortOrder + '}'
       sortObject = JSON.parse(sortObject)
-      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage);
+      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage)
 
-      const query = JobListingController.keywordBasedJobSearchQuery(keyword);
-      query['$and'] = [];
-      query['$and'].push({ is_active: true });
-      query['$and'].push({ listing_type: 'job' });
-      const locationRegex = new RegExp(`^.*${location}.*$`, 'is');
-      const jobTypeRegex = new RegExp(`^.*${job_type}.*$`, 'is');
-      query['$or'].push({ job_location: locationRegex });
-      query['$or'].push({ job_type_name: jobTypeRegex });
+      const query = JobListingController.getSearchJobQuery(
+        location,
+        jobType,
+        keyword
+      )
+      if (!query['$and']) query['$and'] = []
+      query['$and'].push({ is_active: true })
+      // query['$and'].push({ listing_type: 'job' });
+      // const locationRegex = new RegExp(`^.*${location}.*$`, 'is')
+      // const jobTypeRegex = new RegExp(`^.*${jobType}.*$`, 'is')
+      // query['$or'].push({ job_location: locationRegex })
+      // query['$or'].push({ job_type_name: jobTypeRegex })
 
       let userApplication = await QzUserApplications.aggregate([
         {
@@ -371,9 +428,43 @@ class JobListingController {
         applied_job_ids = [...new Set(applied_job_ids)]
       }
 
-      let employmentModel = await QzEmployment.aggregate([
+      let searchedJobsCount = await QzEmployment.aggregate([
+        {
+          $addFields: {
+            job_type_objectid: { $toObjectId: '$job_type_id' }
+          }
+        },
+        {
+          $lookup: {
+            from: 'qz_job_types',
+            localField: 'job_type_objectid',
+            foreignField: '_id',
+            as: 'qz_job_types'
+          }
+        },
+        {
+          $addFields: {
+            job_type: {
+              $arrayElemAt: ['$qz_job_types.name', 0]
+            }
+          }
+        },
+        {
+          $match: query
+        },
+        {
+          $project: {
+            qz_job_types: 0
+          }
+        },
+        {
+          $count: 'total_jobs_count'
+        }
+      ])
+
+      let jobDetails = await QzEmployment.aggregate([
         { $match: query },
-        { $addFields: { jobTypeId: { "$toObjectId": "$job_type_id" } } },
+        { $addFields: { jobTypeId: { $toObjectId: '$job_type_id' } } },
         {
           $lookup: {
             from: 'qz_job_types',
@@ -390,7 +481,7 @@ class JobListingController {
         {
           $project: { job_type_details: 0 }
         },
-        { $addFields: { posted_by_id: { "$toObjectId": "$posted_by" } } },
+        { $addFields: { posted_by_id: { $toObjectId: '$posted_by' } } },
         {
           $lookup: {
             from: 'qz_cr_user_profiles',
@@ -412,20 +503,35 @@ class JobListingController {
       ])
 
       if (doesUserHaveSomeAlreadyAppliedJobs) {
-        employmentModel = employmentModel.map(x => {
+        jobDetails = jobDetails.map(x => {
           const isAlreadyAppliedJob = applied_job_ids.includes(x._id.toString())
           x.is_already_applied = isAlreadyAppliedJob
           return x
         })
       }
 
-      if (!employmentModel.length) {
-        return helpers.SendErrorsAsResponse(null, res, 'No records!')
+      if (!jobDetails.length) {
+        let noDataResponse = {
+          status_code: 2,
+          result: [
+            {
+              jobDetails: [],
+              total_jobs_count: 0
+            }
+          ],
+          message: 'No Records found!'
+        }
+        return helpers.SendSuccessResponse(res, noDataResponse)
       }
 
       let response = {
         status_code: 1,
-        result: employmentModel
+        result: [
+          {
+            jobDetails,
+            total_jobs_count: searchedJobsCount[0].total_jobs_count
+          }
+        ]
       }
 
       return helpers.SendSuccessResponse(res, response)
@@ -434,7 +540,7 @@ class JobListingController {
     }
   }
 
-  static async updateJobListing(req, res) {
+  static async updateJobListing (req, res) {
     try {
       const {
         job_name,
@@ -481,7 +587,7 @@ class JobListingController {
     }
   }
 
-  static async deleteJobListing(req, res) {
+  static async deleteJobListing (req, res) {
     try {
       const employmentDeletedResult = await QzEmployment.findByIdAndDelete(
         req.params.id
@@ -506,7 +612,7 @@ class JobListingController {
     }
   }
 
-  static async getJobsForOpenListing(req, res) {
+  static async getJobsForOpenListing (req, res) {
     try {
       const sortBy = req.body.sortBy || 'creation_date'
       const sortOrder = req.body.sortOrder || -1
@@ -515,8 +621,7 @@ class JobListingController {
 
       let sortObject = '{' + '"' + sortBy + '": ' + sortOrder + '}'
       sortObject = JSON.parse(sortObject)
-      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage);
-
+      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage)
 
       const employmentModel = await QzEmployment.aggregate([
         { $match: { is_active: true } },
@@ -556,7 +661,7 @@ class JobListingController {
     }
   }
 
-  static async searchJobs(req, res) {
+  static async searchJobs (req, res) {
     try {
       const { location, jobType, keyword } = req.body
 
@@ -574,7 +679,8 @@ class JobListingController {
         jobType,
         keyword
       )
-
+      if (!query['$and']) query['$and'] = []
+      query['$and'].push({ is_active: true })
       let searchedJobsCount = await QzEmployment.aggregate([
         {
           $addFields: {
@@ -664,13 +770,10 @@ class JobListingController {
     }
   }
 
-  static keywordBasedJobSearchQuery(keyword) {
-
+  static keywordBasedJobSearchQuery (keyword) {
     let orQuery = {}
     orQuery['$or'] = []
     if (keyword) {
-
-
       const likeRegex = new RegExp(`^.*${keyword}.*$`, 'is')
       orQuery['$or'].push({ job_name: likeRegex })
       orQuery['$or'].push({ job_description: likeRegex })
@@ -682,7 +785,7 @@ class JobListingController {
     return orQuery
   }
 
-  static getSearchJobQuery(location, jobtype, keyword) {
+  static getSearchJobQuery (location, jobtype, keyword) {
     let query = {}
 
     if (location || jobtype) {
@@ -694,9 +797,14 @@ class JobListingController {
         job_location: { $regex: location, $options: 'i' }
       })
     }
+    // if (jobtype) {
+    //   query['$and'].push({
+    //     'qz_job_types.name': { $regex: jobtype, $options: 'i' }
+    //   })
+    // }
     if (jobtype) {
       query['$and'].push({
-        'qz_job_types.name': { $regex: jobtype, $options: 'i' }
+        job_type_id: { $regex: jobtype, $options: 'i' }
       })
     }
     if (keyword) {
@@ -721,9 +829,9 @@ class JobListingController {
     return query
   }
 
-  static async getActiveInternshipListingPagedList(req, res) {
+  static async getActiveInternshipListingPagedList (req, res) {
     try {
-      const { location, job_type, keyword } = req.body;
+      const { location, job_type, keyword } = req.body
       const sortBy = req.body.sortBy || 'creation_date'
       const sortOrder = req.body.sortOrder || -1
       const recordsPerPage = req.body.recordsPerPage || 10
@@ -731,16 +839,16 @@ class JobListingController {
 
       let sortObject = '{' + '"' + sortBy + '": ' + sortOrder + '}'
       sortObject = JSON.parse(sortObject)
-      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage);
+      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage)
 
-      const query = JobListingController.keywordBasedJobSearchQuery(keyword);
-      query['$and'] = [];
-      query['$and'].push({ is_active: true });
-      query['$and'].push({ listing_type: 'internship' });
-      const locationRegex = new RegExp(`^.*${location}.*$`, 'is');
-      const jobTypeRegex = new RegExp(`^.*${job_type}.*$`, 'is');
-      query['$or'].push({ job_location: locationRegex });
-      query['$or'].push({ job_type_name: jobTypeRegex });
+      const query = JobListingController.keywordBasedJobSearchQuery(keyword)
+      query['$and'] = []
+      query['$and'].push({ is_active: true })
+      query['$and'].push({ listing_type: 'internship' })
+      const locationRegex = new RegExp(`^.*${location}.*$`, 'is')
+      const jobTypeRegex = new RegExp(`^.*${job_type}.*$`, 'is')
+      query['$or'].push({ job_location: locationRegex })
+      query['$or'].push({ job_type_name: jobTypeRegex })
 
       let userApplication = await QzUserApplications.aggregate([
         {
@@ -773,7 +881,7 @@ class JobListingController {
 
       let employmentModel = await QzEmployment.aggregate([
         { $match: query },
-        { $addFields: { jobTypeId: { "$toObjectId": "$job_type_id" } } },
+        { $addFields: { jobTypeId: { $toObjectId: '$job_type_id' } } },
         {
           $lookup: {
             from: 'qz_job_types',
@@ -790,7 +898,7 @@ class JobListingController {
         {
           $project: { job_type_details: 0 }
         },
-        { $addFields: { posted_by_id: { "$toObjectId": "$posted_by" } } },
+        { $addFields: { posted_by_id: { $toObjectId: '$posted_by' } } },
         {
           $lookup: {
             from: 'qz_cr_user_profiles',
@@ -834,9 +942,9 @@ class JobListingController {
     }
   }
 
-  static async getActiveWorkshopListingPagedList(req, res) {
+  static async getActiveWorkshopListingPagedList (req, res) {
     try {
-      const { location, job_type, keyword } = req.body;
+      const { location, job_type, keyword } = req.body
       const sortBy = req.body.sortBy || 'creation_date'
       const sortOrder = req.body.sortOrder || -1
       const recordsPerPage = req.body.recordsPerPage || 10
@@ -844,17 +952,16 @@ class JobListingController {
 
       let sortObject = '{' + '"' + sortBy + '": ' + sortOrder + '}'
       sortObject = JSON.parse(sortObject)
-      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage);
+      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage)
 
-      const query = JobListingController.keywordBasedJobSearchQuery(keyword);
-      query['$and'] = [];
-      query['$and'].push({ is_active: true });
-      query['$and'].push({ listing_type: 'workshop' });
-      const locationRegex = new RegExp(`^.*${location}.*$`, 'is');
-      const jobTypeRegex = new RegExp(`^.*${job_type}.*$`, 'is');
-      query['$or'].push({ job_location: locationRegex });
-      query['$or'].push({ job_type_name: jobTypeRegex });
-
+      const query = JobListingController.keywordBasedJobSearchQuery(keyword)
+      query['$and'] = []
+      query['$and'].push({ is_active: true })
+      query['$and'].push({ listing_type: 'workshop' })
+      const locationRegex = new RegExp(`^.*${location}.*$`, 'is')
+      const jobTypeRegex = new RegExp(`^.*${job_type}.*$`, 'is')
+      query['$or'].push({ job_location: locationRegex })
+      query['$or'].push({ job_type_name: jobTypeRegex })
 
       let userApplication = await QzUserApplications.aggregate([
         {
@@ -887,7 +994,7 @@ class JobListingController {
 
       let employmentModel = await QzEmployment.aggregate([
         { $match: query },
-        { $addFields: { jobTypeId: { "$toObjectId": "$job_type_id" } } },
+        { $addFields: { jobTypeId: { $toObjectId: '$job_type_id' } } },
         {
           $lookup: {
             from: 'qz_job_types',
@@ -904,7 +1011,7 @@ class JobListingController {
         {
           $project: { job_type_details: 0 }
         },
-        { $addFields: { posted_by_id: { "$toObjectId": "$posted_by" } } },
+        { $addFields: { posted_by_id: { $toObjectId: '$posted_by' } } },
         {
           $lookup: {
             from: 'qz_cr_user_profiles',
