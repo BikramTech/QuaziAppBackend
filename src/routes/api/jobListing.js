@@ -14,5 +14,6 @@ router.patch('/UpdateJobListing/:id', [Authorize, UpdateJobListingValidator], Jo
 router.delete('/DeleteJobListing/:id', [Authorize, DeleteJobListingValidator], JobListingController.deleteJobListing)
 router.post('/SearchJobs', JobListingController.searchJobs);
 router.get('/GetJobLocationSuggestions/:keyword', JobListingController.getJobLocationSuggestions);
+router.get('/GetRecommendedJobsForUser', [Authorize], JobListingController.getRecommendedJobsForUser);
 
 module.exports = router

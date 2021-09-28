@@ -1,9 +1,9 @@
 const helpers = require('../config/helpers')
-const { QzEmployment, QzUserApplications } = require('../db/models')
+const { QzEmployment, QzUserApplications, QzUserProfile } = require('../db/models')
 const mongoose = require('mongoose')
 
 class JobListingController {
-  static async addJobListing (req, res) {
+  static async addJobListing(req, res) {
     try {
       const {
         job_name,
@@ -42,7 +42,7 @@ class JobListingController {
     }
   }
 
-  static async getJobListingById (req, res) {
+  static async getJobListingById(req, res) {
     try {
       const employmentModel = await QzEmployment.aggregate([
         { $match: { _id: mongoose.Types.ObjectId(req.params.id) } },
@@ -179,7 +179,7 @@ class JobListingController {
     }
   }
 
-  static async getJobListingPagedList (req, res) {
+  static async getJobListingPagedList(req, res) {
     try {
       const { location, jobType, keyword } = req.body
 
@@ -374,7 +374,7 @@ class JobListingController {
     }
   }
 
-  static async getActiveJobListingPagedList (req, res) {
+  static async getActiveJobListingPagedList(req, res) {
     try {
       const { location, jobType, keyword } = req.body
       const sortBy = req.body.sortBy || 'creation_date'
@@ -540,7 +540,7 @@ class JobListingController {
     }
   }
 
-  static async updateJobListing (req, res) {
+  static async updateJobListing(req, res) {
     try {
       const {
         job_name,
@@ -587,7 +587,7 @@ class JobListingController {
     }
   }
 
-  static async deleteJobListing (req, res) {
+  static async deleteJobListing(req, res) {
     try {
       const employmentDeletedResult = await QzEmployment.findByIdAndDelete(
         req.params.id
@@ -612,7 +612,7 @@ class JobListingController {
     }
   }
 
-  static async getJobsForOpenListing (req, res) {
+  static async getJobsForOpenListing(req, res) {
     try {
       const sortBy = req.body.sortBy || 'creation_date'
       const sortOrder = req.body.sortOrder || -1
@@ -661,7 +661,7 @@ class JobListingController {
     }
   }
 
-  static async searchJobs (req, res) {
+  static async searchJobs(req, res) {
     try {
       const { location, jobType, keyword } = req.body
 
@@ -786,7 +786,7 @@ class JobListingController {
     }
   }
 
-  static keywordBasedJobSearchQuery (keyword) {
+  static keywordBasedJobSearchQuery(keyword) {
     let orQuery = {}
     orQuery['$or'] = []
     if (keyword) {
@@ -801,7 +801,7 @@ class JobListingController {
     return orQuery
   }
 
-  static getSearchJobQuery (location, jobtype, keyword) {
+  static getSearchJobQuery(location, jobtype, keyword) {
     let query = {}
 
     if (location || jobtype) {
@@ -845,7 +845,7 @@ class JobListingController {
     return query
   }
 
-  static async getActiveInternshipListingPagedList (req, res) {
+  static async getActiveInternshipListingPagedList(req, res) {
     try {
       const { location, job_type, keyword } = req.body
       const sortBy = req.body.sortBy || 'creation_date'
@@ -958,7 +958,7 @@ class JobListingController {
     }
   }
 
-  static async getActiveWorkshopListingPagedList (req, res) {
+  static async getActiveWorkshopListingPagedList(req, res) {
     try {
       const { location, job_type, keyword } = req.body
       const sortBy = req.body.sortBy || 'creation_date'
@@ -1071,7 +1071,7 @@ class JobListingController {
     }
   }
 
-  static async getJobLocationSuggestions (req, res) {
+  static async getJobLocationSuggestions(req, res) {
     try {
       const { keyword } = req.params
 
@@ -1110,6 +1110,59 @@ class JobListingController {
       let response = {
         status_code: 1,
         result: locationSuggestionsResult[0].job_locations
+      }
+
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      helpers.SendErrorsAsResponse(err, res)
+    }
+  }
+
+  static async getRecommendedJobsForUser(req, res) {
+    try {
+
+      const { userId } = req.user;
+
+      let userProfileResult = await QzUserProfile.aggregate([
+        {
+          $match: {
+            "user_id": userId
+          }
+        },
+        {
+          $lookup: {
+            from: "qz_employments",
+            localField: "skills",
+            foreignField: "skills",
+            as: "relevant_jobs"
+          }
+        }
+      ])
+
+      if (!userProfileResult || !userProfileResult.length) {
+        let response = {
+          status_code: 1,
+          result: []
+        }
+
+        return helpers.SendSuccessResponse(res, response)
+      }
+
+
+      let skillsLikeRegex = userProfileResult[0].skills.join().replace(new RegExp(",", 'g'), " ");
+
+      const additionalRecommendedJobs = await QzEmployment.aggregate([
+        { $match: { $or: [{ job_description: new RegExp(`^.*${skillsLikeRegex}.*$`, 'is') }] } }
+      ]);
+
+      let recommendedJobs = [...additionalRecommendedJobs, ...userProfileResult[0].relevant_jobs];
+      recommendedJobs = [...new Map(recommendedJobs.map(item =>
+        [item['_id'].toString(), item])).values()];
+
+
+      let response = {
+        status_code: 1,
+        result: recommendedJobs
       }
 
       return helpers.SendSuccessResponse(res, response)

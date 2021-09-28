@@ -105,6 +105,10 @@ const QzUserProfileSchema = new mongoose.Schema({
   },
   profile_pic: {
     type: String
+  },
+  gender: {
+    type: String,
+    enum: ["Male", "Female"]
   }
 })
 
