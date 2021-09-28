@@ -746,6 +746,25 @@ class JobListingController {
             qz_job_types: 0
           }
         },
+        { $addFields: { posted_by_id: { $toObjectId: '$posted_by' } } },
+        {
+          $lookup: {
+            from: 'qz_cr_user_profiles',
+            localField: 'posted_by_id',
+            foreignField: 'user_id',
+            as: 'posted_user_details'
+          }
+        },
+        {
+          $addFields: {
+            posted_by_user: {
+              $arrayElemAt: ['$posted_user_details.company_name', 0]
+            }
+          }
+        },
+        {
+          $unset: ['posted_user_details', 'posted_by_id']
+        },
         { $sort: sortObject },
         { $skip: recordsToSkip },
         { $limit: parseInt(recordsPerPage) }
