@@ -681,6 +681,7 @@ class JobListingController {
       )
       if (!query['$and']) query['$and'] = []
       query['$and'].push({ is_active: true })
+
       let searchedJobsCount = await QzEmployment.aggregate([
         {
           $addFields: {
@@ -710,14 +711,10 @@ class JobListingController {
             qz_job_types: 0
           }
         }
-      ]);
+      ])
 
       if (!searchedJobsCount.length) {
-        return helpers.SendErrorsAsResponse(
-          null,
-          res,
-          'No records'
-        )
+        return helpers.SendErrorsAsResponse(null, res, 'No records')
       }
 
       let searchedJobs = await QzEmployment.aggregate([
@@ -759,7 +756,7 @@ class JobListingController {
         result: [
           {
             searchedJobs,
-            total_jobs_count: searchedJobs.length
+            total_jobs_count: searchedJobsCount.length
           }
         ]
       }
@@ -1055,10 +1052,9 @@ class JobListingController {
     }
   }
 
-  static async getJobLocationSuggestions(req, res) {
+  static async getJobLocationSuggestions (req, res) {
     try {
-
-      const { keyword } = req.params;
+      const { keyword } = req.params
 
       if (!keyword) {
         let response = {
@@ -1069,18 +1065,19 @@ class JobListingController {
         return helpers.SendSuccessResponse(res, response)
       }
 
-      const searchLocationRegex = new RegExp(`^.*${keyword}.*$`, 'is');
+      const searchLocationRegex = new RegExp(`^.*${keyword}.*$`, 'is')
 
-
-      const locationSuggestionsResult = await QzEmployment.aggregate([{
-        $match: { $or: [{ job_location: searchLocationRegex }] }
-      },
-      {
-        "$group": {
-          "_id": null,
-          "job_locations": { "$addToSet": { "$toUpper": "$job_location" } }
+      const locationSuggestionsResult = await QzEmployment.aggregate([
+        {
+          $match: { $or: [{ job_location: searchLocationRegex }] }
+        },
+        {
+          $group: {
+            _id: null,
+            job_locations: { $addToSet: { $toUpper: '$job_location' } }
+          }
         }
-      }])
+      ])
 
       if (!locationSuggestionsResult || !locationSuggestionsResult.length) {
         let response = {
@@ -1090,8 +1087,6 @@ class JobListingController {
 
         return helpers.SendSuccessResponse(res, response)
       }
-
-
 
       let response = {
         status_code: 1,
