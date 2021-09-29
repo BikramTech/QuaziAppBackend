@@ -1,8 +1,7 @@
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const uniqueValidator = require('mongoose-unique-validator')
-const bcrypt = require('bcrypt')
-const { appConfig } = require('../../../config')
+const { appConfig, helpers } = require('../../../config')
 
 const QzCrUserRegistrationSchema = new mongoose.Schema({
   user_name: {
@@ -43,7 +42,7 @@ QzCrUserRegistrationSchema.methods.generateAuthToken = () => {
 }
 
 QzCrUserRegistrationSchema.methods.comparePassword = function (password) {
-  return bcrypt.compareSync(password, this.password)
+  return helpers.CompareEncryptedTextWithPlainText(password, this.password);
 }
 
 const Qz_Cr_User_Registration = mongoose.model(

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const bcrypt = require('bcrypt')
 
 const { MailService } = require('../lib/services')
 const helpers = require('../config/helpers')
@@ -22,15 +21,14 @@ class UserController {
     try {
       const { user_name, email, mobile_no } = req.body
 
-      const salt = await bcrypt.genSalt(10)
-      const hashedPassword = await bcrypt.hash(req.body.password, salt)
+      const encryptedPassword = helpers.GetEncryptedText(req.body.password);
 
       const emailVerificationOtp = helpers.GenerateSixDigitCode()
 
       const userRegistrationResult = await new QzUserRegistration({
         user_name,
         email,
-        password: hashedPassword,
+        password: encryptedPassword,
         mobile_no,
         otp: emailVerificationOtp
       })
@@ -117,7 +115,7 @@ class UserController {
       )
     }
 
-    const isValidPassword = await user.comparePassword(req.body.password)
+    const isValidPassword = user.comparePassword(req.body.password)
 
     if (!isValidPassword)
       return helpers.SendErrorsAsResponse(
@@ -325,13 +323,13 @@ class UserController {
       }
 
       var randomPassword = helpers.GenerateSixDigitCode().toString()
-      const salt = await bcrypt.genSalt(10)
-      const hashedPassword = await bcrypt.hash(randomPassword, salt)
+
+      const encryptedPassword = helpers.GetEncryptedText(randomPassword);
 
       let user = await new QzUserRegistration({
         user_name: email,
         email,
-        password: hashedPassword
+        password: encryptedPassword
       })
 
       await user.save()
@@ -519,24 +517,12 @@ class UserController {
           res,
           'The Email provided is Invalid'
         )
-
-      let password = req.body.newPassword
-      const salt = await bcrypt.genSalt(10)
-      password = await bcrypt.hash(password, salt)
-
-      await QzUserRegistration.findByIdAndUpdate(
-        user._id,
-        {
-          password: password,
-          updated: new Date()
-        },
-        { new: true }
-      )
+      const decryptedPassword = helpers.GetDecryptedText(user._doc.password);
 
       await MailService.sendMail(
         user.email,
         'Password reset mail from Quazi',
-        'Your password has been reset successfully '
+        `Your password for the quazi app is ${decryptedPassword}`
       )
 
       let response = {
@@ -553,8 +539,7 @@ class UserController {
   static async changePassword(req, res) {
     try {
       let password = req.body.newPassword
-      const salt = await bcrypt.genSalt(10)
-      password = await bcrypt.hash(password, salt)
+      password = helpers.GetEncryptedText(password);
 
       const userDetails = await QzUserRegistration.findById(req.params.id)
 
@@ -565,7 +550,7 @@ class UserController {
           'The ID Provided is Invalid'
         )
 
-      const validPassword = await userDetails.comparePassword(
+      const validPassword = userDetails.comparePassword(
         req.body.oldPassword
       )
 

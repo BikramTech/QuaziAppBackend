@@ -1,3 +1,6 @@
+const CryptoJS = require("crypto-js");
+const config = require('./appConfig')
+
 const GenerateSixDigitCode = () => {
   var min = 100000
   var max = 900000
@@ -43,10 +46,26 @@ const SendSuccessResponse = (responseCallback, response) => {
   return responseCallback.status(201).send(response)
 }
 
+const GetEncryptedText = (textToEncrypt) => {
+  return CryptoJS.AES.encrypt(textToEncrypt.toString(), config.encryption.secret_key).toString();
+}
+
+const GetDecryptedText = (textToDecrypt) => {
+  return CryptoJS.AES.decrypt(textToDecrypt, config.encryption.secret_key).toString(CryptoJS.enc.Utf8);
+}
+
+const CompareEncryptedTextWithPlainText = (plainText, encryptedText) => {
+  const decryptedText = GetDecryptedText(encryptedText);
+  return plainText.toString() === decryptedText;
+}
+
 module.exports = {
   GenerateSixDigitCode,
   ParseModelValidationErrorMessages,
   SendErrorsAsResponse,
   SendSuccessResponseWithAuthHeader,
-  SendSuccessResponse
+  SendSuccessResponse,
+  GetEncryptedText,
+  GetDecryptedText,
+  CompareEncryptedTextWithPlainText
 }

@@ -23,5 +23,8 @@ module.exports = {
     mail_domain_userName: process.env.MAIL_SERVICE_USERNAME,
     mail_domain_password: process.env.MAIL_SERVICE_PASSWORD,
     mail_from: process.env.MAIL_SERVICE_FROM
+  },
+  encryption: {
+    secret_key: process.env.ENCRYPTION_SECRET_KEY
   }
 }
