@@ -298,7 +298,8 @@ class JobListingController {
             skills: { $first: '$skills' },
             job_type_name: { $first: '$job_type_name' },
             users: { $push: '$user_details' },
-            posted_by_user: { $first: '$posted_by_user' }
+            posted_by_user: { $first: '$posted_by_user' },
+            listing_type: { $first: '$listing_type' }
           }
         },
         {
