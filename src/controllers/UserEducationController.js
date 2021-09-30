@@ -30,7 +30,7 @@ class UserEducationController {
       let response = {
         status_code: 1,
         message: 'User Profile education succesfully added',
-        result: [userEducationModel]
+        result: userEducationModel
       }
 
       return helpers.SendSuccessResponse(res, response)
@@ -74,7 +74,7 @@ class UserEducationController {
 
       let response = {
         status_code: 1,
-        result: [userEducationModel]
+        result: userEducationModel
       }
 
       return helpers.SendSuccessResponse(res, response)
