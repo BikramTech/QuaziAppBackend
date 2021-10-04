@@ -347,6 +347,44 @@ class CorporateUserController {
       return helpers.SendErrorsAsResponse(err, res)
     }
   }
+
+  static async sendOtp (req, res) {
+    try {
+      const { email } = req.body
+      let OTP = helpers.GenerateSixDigitCode()
+
+      const user = await QzCrUserRegistration.findOneAndUpdate(
+        { email: email },
+        {
+          otp: OTP
+        },
+        { new: true, upsert: true }
+      )
+      if (!user)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'The user with the given Email was not found.'
+        )
+      let response
+
+      MailService.sendMail(email, 'OTP For Quazi', OTP)
+        .then(resp => {
+          console.log('Email sent successfully')
+          response = {
+            status_code: 1,
+            message: 'OTP Sent Successfully',
+            result: []
+          }
+          return helpers.SendSuccessResponse(res, response)
+        })
+        .catch(err => {
+          return helpers.SendErrorsAsResponse(err, res, 'Failed to send OTP')
+        })
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res)
+    }
+  }
 }
 
 module.exports = CorporateUserController

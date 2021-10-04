@@ -592,7 +592,13 @@ class UserController {
       const { email } = req.body
       let OTP = helpers.GenerateSixDigitCode()
 
-      const user = await QzUserRegistration.findOne({ email })
+      const user = await QzUserRegistration.findOneAndUpdate(
+        { email: email },
+        {
+          otp: OTP
+        },
+        { new: true, upsert: true }
+      )
       if (!user)
         return helpers.SendErrorsAsResponse(
           null,

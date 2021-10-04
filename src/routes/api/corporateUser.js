@@ -46,5 +46,6 @@ router.get(
   [Authorize, UserIdValidator],
   CorporateUserController.details
 )
+router.post('/SendOtp', EmailValidator, CorporateUserController.sendOtp)
 
 module.exports = router
