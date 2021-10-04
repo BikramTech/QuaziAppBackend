@@ -316,6 +316,37 @@ class CorporateUserController {
       return helpers.SendErrorsAsResponse(err, res)
     }
   }
+
+  static async details (req, res) {
+    try {
+      let user = await QzCrUserRegistration.findById(req.params.id)
+      if (!user)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'The user with the given ID was not found.'
+        )
+      let userProfile = await QzCrUserProfile.findOne({
+        user_id: req.params.id
+      })
+
+      const { password, otp, _id, ...userDoc } = user._doc
+
+      if (userProfile) {
+        const { _id: userId, ...userProfileDoc } = userProfile._doc
+        user = { ...userDoc, ...userProfileDoc }
+      }
+
+      let response = {
+        status_code: 1,
+        message: 'User Details Successfully Fetched',
+        result: [user]
+      }
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res)
+    }
+  }
 }
 
 module.exports = CorporateUserController
