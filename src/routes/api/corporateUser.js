@@ -5,7 +5,8 @@ const {
   CrUserSignupLoginValidator,
   EmailVerificationValidator,
   ChangePasswordValidator,
-  LoginValidator
+  LoginValidator,
+  UserIdValidator
 } = require('../../lib/validators/authValidator')
 const { EmailValidator } = require('../../lib/validators/commonValidator')
 const {
@@ -39,5 +40,12 @@ router.patch(
   [Authorize, ChangePasswordValidator],
   CorporateUserController.changePassword
 )
+
+router.get(
+  '/Details/:id',
+  [Authorize, UserIdValidator],
+  CorporateUserController.details
+)
+router.post('/SendOtp', EmailValidator, CorporateUserController.sendOtp)
 
 module.exports = router

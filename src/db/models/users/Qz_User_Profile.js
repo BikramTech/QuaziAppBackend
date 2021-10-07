@@ -3,50 +3,46 @@ const mongoose = require('mongoose')
 const QzUserProfileSchema = new mongoose.Schema({
   user_id: {
     type: String,
-    required: [true, "User Id is required"]
+    required: [true, 'User Id is required']
   },
   first_name: {
     type: String,
-    required: [true, "First Name is required"],
+    required: [true, 'First Name is required'],
     minlength: 2,
     maxlength: 50
   },
   last_name: {
     type: String,
-    required: [true, "Last Name is required"],
+    required: [true, 'Last Name is required'],
     minlength: 2,
     maxlength: 50
   },
   countryCode: {
     type: String,
-    required: [true, "Country Code is required"],
+    required: [true, 'Country Code is required'],
     minlength: 2,
     maxlength: 5
   },
   dob: {
     type: Date,
     default: null,
-    required: [true, "Date of birth is required"]
-  },
-  gender: {
-    type: String,
-    default: null
+    required: [true, 'Date of birth is required']
   },
   residential_address: {
     type: String,
     default: null,
-    required: [true, "Residential Address is required"]
+    required: [true, 'Residential Address is required']
   },
   profile_summary: {
     type: String,
     default: null,
-    required: [true, "Profile Summary is required"]
+    required: [true, 'Profile Summary is required']
   },
   skills: {
     type: Array,
     ref: 'xx_qz_key_skills',
     default: null,
-    required: [true, "Skills are required"]
+    required: [true, 'Skills are required']
   },
   social_type: {
     type: Number,
@@ -108,7 +104,7 @@ const QzUserProfileSchema = new mongoose.Schema({
   },
   gender: {
     type: String,
-    enum: ["Male", "Female"]
+    enum: ['Male', 'Female', 'Other']
   }
 })
 

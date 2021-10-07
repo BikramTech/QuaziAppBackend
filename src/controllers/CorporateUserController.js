@@ -4,10 +4,14 @@ const { MailService } = require('../lib/services')
 const helpers = require('../config/helpers')
 const appConfig = require('../config/appConfig')
 const jwt = require('jsonwebtoken')
-const { QzCrUserRegistration, QzCrUserProfile, QzUserRegistration } = require('../db/models')
+const {
+  QzCrUserRegistration,
+  QzCrUserProfile,
+  QzUserRegistration
+} = require('../db/models')
 
 class CorporateUserController {
-  static async userSignup(req, res) {
+  static async userSignup (req, res) {
     try {
       const { user_name, email, mobile_no } = req.body
 
@@ -52,7 +56,7 @@ class CorporateUserController {
     }
   }
 
-  static async emailVerification(req, res) {
+  static async emailVerification (req, res) {
     const { email, otp } = req.body
 
     try {
@@ -103,7 +107,7 @@ class CorporateUserController {
     }
   }
 
-  static async userProfileUpdate(req, res) {
+  static async userProfileUpdate (req, res) {
     try {
       const {
         first_name,
@@ -152,7 +156,7 @@ class CorporateUserController {
     }
   }
 
-  static async userLogin(req, res) {
+  static async userLogin (req, res) {
     let user = {}
     let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     const { email } = req.body
@@ -198,8 +202,8 @@ class CorporateUserController {
         !userProfile.is_active
           ? 'Your account is inactive. Please contact administrator!'
           : !userProfile.is_email_verified
-            ? 'Please verify your email.'
-            : ''
+          ? 'Please verify your email.'
+          : ''
       )
     }
 
@@ -231,7 +235,7 @@ class CorporateUserController {
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
 
-  static async forgotPassword(req, res) {
+  static async forgotPassword (req, res) {
     try {
       const user = await QzCrUserRegistration.findOne({ email: req.body.email })
 
@@ -242,17 +246,17 @@ class CorporateUserController {
           'The Email provided is Invalid'
         )
 
-      const decryptedPassword = helpers.GetDecryptedText(user._doc.password);
+      const decryptedPassword = helpers.GetDecryptedText(user._doc.password)
 
-      await MailService.sendMail(
+      var emailResponse = MailService.sendMail(
         user.email,
-        'Password reset mail from Quazi',
+        'Password forgot mail from Quazi',
         `Your password for the quazi app is ${decryptedPassword}`
       )
 
       let response = {
         status_code: 1,
-        message: 'Password reset successful.',
+        message: 'Password has been sent on your registered email.',
         result: []
       }
       return helpers.SendSuccessResponse(res, response)
@@ -261,11 +265,11 @@ class CorporateUserController {
     }
   }
 
-  static async changePassword(req, res) {
+  static async changePassword (req, res) {
     try {
       let password = req.body.newPassword
 
-      password = helpers.GetEncryptedText(password);
+      password = helpers.GetEncryptedText(password)
 
       const userDetails = await QzCrUserRegistration.findById(req.params.id)
 
@@ -276,9 +280,7 @@ class CorporateUserController {
           'The ID Provided is Invalid'
         )
 
-      const validPassword = userDetails.comparePassword(
-        req.body.oldPassword
-      )
+      const validPassword = userDetails.comparePassword(req.body.oldPassword)
 
       if (!validPassword)
         return helpers.SendErrorsAsResponse(
@@ -310,6 +312,75 @@ class CorporateUserController {
       }
 
       return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res)
+    }
+  }
+
+  static async details (req, res) {
+    try {
+      let user = await QzCrUserRegistration.findById(req.params.id)
+      if (!user)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'The user with the given ID was not found.'
+        )
+      let userProfile = await QzCrUserProfile.findOne({
+        user_id: req.params.id
+      })
+
+      const { password, otp, _id, ...userDoc } = user._doc
+
+      if (userProfile) {
+        const { _id: userId, ...userProfileDoc } = userProfile._doc
+        user = { ...userDoc, ...userProfileDoc }
+      }
+
+      let response = {
+        status_code: 1,
+        message: 'User Details Successfully Fetched',
+        result: [user]
+      }
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res)
+    }
+  }
+
+  static async sendOtp (req, res) {
+    try {
+      const { email } = req.body
+      let OTP = helpers.GenerateSixDigitCode()
+
+      const user = await QzCrUserRegistration.findOneAndUpdate(
+        { email: email },
+        {
+          otp: OTP
+        },
+        { new: true, upsert: true }
+      )
+      if (!user)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'The user with the given Email was not found.'
+        )
+      let response
+
+      MailService.sendMail(email, 'OTP For Quazi', OTP)
+        .then(resp => {
+          console.log('Email sent successfully')
+          response = {
+            status_code: 1,
+            message: 'OTP Sent Successfully',
+            result: []
+          }
+          return helpers.SendSuccessResponse(res, response)
+        })
+        .catch(err => {
+          return helpers.SendErrorsAsResponse(err, res, 'Failed to send OTP')
+        })
     } catch (err) {
       return helpers.SendErrorsAsResponse(err, res)
     }
