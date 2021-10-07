@@ -14,6 +14,7 @@ const {
   QzEmployment,
   QzApplicationStatus
 } = require('../db/models')
+const QzSkills = require('../db/models/keyskills/Qz_Key_Skills')
 const ObjectId = require('mongodb').ObjectID
 
 class UserController {
@@ -368,7 +369,25 @@ class UserController {
         social_id,
         social_type,
         gender
-      } = req.body
+      } = req.body;
+
+      const existingSkills = await QzSkills.aggregate([{ $match: { name: { $in: skills } } }]);
+
+      const newSkillsToAdd = skills.filter(x => !existingSkills.find(y => x === y.name)).map(x => {
+        return {
+          updateOne: {
+            filter: { name: x },
+            update: { $set: { name: x } },
+            upsert: true,
+          }
+        }
+      });
+
+      if (newSkillsToAdd && newSkillsToAdd.length) {
+
+        await QzSkills.bulkWrite(newSkillsToAdd);
+      }
+
 
       const userProfile = new QzUserProfile({
         ...req.body,

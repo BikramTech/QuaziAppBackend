@@ -1121,6 +1121,14 @@ class JobListingController {
 
   static async getRecommendedJobsForUser(req, res) {
     try {
+      const sortBy = req.body.sortBy || 'created_at'
+      const sortOrder = req.body.sortOrder || -1
+      const recordsPerPage = req.body.recordsPerPage || 10
+      const pageNumber = req.body.pageNumber || 0
+
+      let sortObject = '{' + '"' + sortBy + '": ' + sortOrder + '}'
+      sortObject = JSON.parse(sortObject)
+      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage)
 
       const { userId } = req.user;
 
@@ -1137,7 +1145,10 @@ class JobListingController {
             foreignField: "skills",
             as: "relevant_jobs"
           }
-        }
+        },
+        { $sort: { "relevant_jobs.creation_date": sortOrder } },
+        { $skip: recordsToSkip },
+        { $limit: parseInt(recordsPerPage) }
       ])
 
       if (!userProfileResult || !userProfileResult.length) {
