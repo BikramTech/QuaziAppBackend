@@ -1137,19 +1137,10 @@ class JobListingController {
           $match: {
             "user_id": userId
           }
-        },
-        {
-          $lookup: {
-            from: "qz_employments",
-            localField: "skills",
-            foreignField: "skills",
-            as: "relevant_jobs"
-          }
-        },
-        { $sort: { "relevant_jobs.creation_date": sortOrder } },
-        { $skip: recordsToSkip },
-        { $limit: parseInt(recordsPerPage) }
-      ])
+        }
+      ]);
+
+
 
       if (!userProfileResult || !userProfileResult.length) {
         let response = {
@@ -1160,21 +1151,20 @@ class JobListingController {
         return helpers.SendSuccessResponse(res, response)
       }
 
+      const userSkillsRegex = userProfileResult[0].skills.join(",").split(".").join(",").split(",").map(skill => {
+        return new RegExp(`^.*${skill}.*$`, 'is');
+      });
 
-      let skillsLikeRegex = userProfileResult[0].skills.join().replace(new RegExp(",", 'g'), " ");
 
-      const additionalRecommendedJobs = await QzEmployment.aggregate([
-        { $match: { $or: [{ job_description: new RegExp(`^.*${skillsLikeRegex}.*$`, 'is') }] } }
-      ]);
-
-      let recommendedJobs = [...additionalRecommendedJobs, ...userProfileResult[0].relevant_jobs];
-      recommendedJobs = [...new Map(recommendedJobs.map(item =>
-        [item['_id'].toString(), item])).values()];
-
+      const relevant_skills_jobs = await QzEmployment.aggregate([{ "$match": { "$or": [{ "skills": { $in: userSkillsRegex } }, { "job_description": { $in: userSkillsRegex } }] } },
+      { $sort: sortObject },
+      { $skip: recordsToSkip },
+      { $limit: parseInt(recordsPerPage) }
+      ])
 
       let response = {
         status_code: 1,
-        result: recommendedJobs
+        result: relevant_skills_jobs
       }
 
       return helpers.SendSuccessResponse(res, response)
