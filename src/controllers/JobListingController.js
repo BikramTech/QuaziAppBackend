@@ -1162,9 +1162,17 @@ class JobListingController {
       { $limit: parseInt(recordsPerPage) }
       ])
 
+      let total_jobs_count = await QzEmployment.aggregate([{ "$match": { "$or": [{ "skills": { $in: userSkillsRegex } }, { "job_description": { $in: userSkillsRegex } }] } },
+      {
+        $count: 'total_jobs_count'
+      }
+      ]);
+
+      total_jobs_count = total_jobs_count[0].total_jobs_count;
+
       let response = {
         status_code: 1,
-        result: relevant_skills_jobs
+        result: { relevant_skills_jobs, total_jobs_count }
       }
 
       return helpers.SendSuccessResponse(res, response)
