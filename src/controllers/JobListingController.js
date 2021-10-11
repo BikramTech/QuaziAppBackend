@@ -1131,6 +1131,15 @@ class JobListingController {
       const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage)
 
       const { userId } = req.user;
+      const { location, jobType, keyword } = req.body;
+
+      let query = JobListingController.getSearchJobQuery(
+        location,
+        jobType,
+        keyword
+      )
+      if (!query['$and']) query['$and'] = []
+      query['$and'].push({ is_active: true });
 
       let userProfileResult = await QzUserProfile.aggregate([
         {
@@ -1156,16 +1165,24 @@ class JobListingController {
       });
 
 
-      const relevant_skills_jobs = await QzEmployment.aggregate([{ "$match": { "$or": [{ "skills": { $in: userSkillsRegex } }, { "job_description": { $in: userSkillsRegex } }] } },
-      { $sort: sortObject },
-      { $skip: recordsToSkip },
-      { $limit: parseInt(recordsPerPage) }
+      const relevant_skills_jobs = await QzEmployment.aggregate([
+        {
+          "$match": {
+            "$or": [{ "skills": { $in: userSkillsRegex } }, { "job_description": { $in: userSkillsRegex } }]
+          }
+        },
+        { "$match": query },
+        { $sort: sortObject },
+        { $skip: recordsToSkip },
+        { $limit: parseInt(recordsPerPage) }
       ])
 
-      let total_jobs_count = await QzEmployment.aggregate([{ "$match": { "$or": [{ "skills": { $in: userSkillsRegex } }, { "job_description": { $in: userSkillsRegex } }] } },
-      {
-        $count: 'total_jobs_count'
-      }
+      let total_jobs_count = await QzEmployment.aggregate([
+        { "$match": { "$or": [{ "skills": { $in: userSkillsRegex } }, { "job_description": { $in: userSkillsRegex } },] } },
+        { "$match": query },
+        {
+          $count: 'total_jobs_count'
+        }
       ]);
 
       total_jobs_count = total_jobs_count[0].total_jobs_count;
