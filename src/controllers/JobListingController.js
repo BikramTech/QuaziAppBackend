@@ -1165,7 +1165,7 @@ class JobListingController {
       });
 
 
-      const relevant_skills_jobs = await QzEmployment.aggregate([
+      let relevant_skills_jobs = await QzEmployment.aggregate([
         {
           "$match": {
             "$or": [{ "skills": { $in: userSkillsRegex } }, { "job_description": { $in: userSkillsRegex } }]
@@ -1186,6 +1186,44 @@ class JobListingController {
       ]);
 
       total_jobs_count = total_jobs_count[0].total_jobs_count;
+
+      if (total_jobs_count > 0) {
+        let userApplication = await QzUserApplications.aggregate([
+          {
+            $match: {
+              user_id: req.user.userId
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              applied_job_ids: {
+                $push: '$job_id'
+              }
+            }
+          }
+        ])
+
+        let applied_job_ids = []
+        const doesUserHaveSomeAlreadyAppliedJobs =
+          userApplication[0] &&
+          userApplication[0].applied_job_ids &&
+          userApplication[0].applied_job_ids.length
+
+        if (doesUserHaveSomeAlreadyAppliedJobs) {
+          applied_job_ids = userApplication[0].applied_job_ids.map(x =>
+            x.toString()
+          )
+          applied_job_ids = [...new Set(applied_job_ids)]
+
+          relevant_skills_jobs = relevant_skills_jobs.map(x => {
+            const isAlreadyAppliedJob = applied_job_ids.includes(x._id.toString())
+            x.is_already_applied = isAlreadyAppliedJob
+            return x
+          })
+        }
+
+      }
 
       let response = {
         status_code: 1,
