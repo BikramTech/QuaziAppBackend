@@ -47,5 +47,6 @@ router.get(
   CorporateUserController.details
 )
 router.post('/SendOtp', EmailValidator, CorporateUserController.sendOtp)
+router.patch("/ChangeStatus/:id", [Authorize, UserIdValidator], CorporateUserController.changeStatus);
 
 module.exports = router

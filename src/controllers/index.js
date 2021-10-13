@@ -6,5 +6,7 @@ const JobListingController = require("./JobListingController");
 const SkillsController = require("./SkillsController");
 const UserEducationController = require("./UserEducationController");
 const TermsConditionsController = require("./TermsConditionsController");
+const ApplicationStatusController = require("./ApplicationStatusController");
+const PaymentPlanController = require("./PaymentPlanController");
 
-module.exports = { UserController, CorporateUserController, CompanyController, JobTypesController, JobListingController, SkillsController, UserEducationController, TermsConditionsController }
+module.exports = { UserController, CorporateUserController, CompanyController, JobTypesController, JobListingController, SkillsController, UserEducationController, TermsConditionsController, ApplicationStatusController, PaymentPlanController }

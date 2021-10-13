@@ -17,10 +17,23 @@ const DeleteUserApplicationRule = [
   check('id')
     .isMongoId()
     .withMessage('Invalid user application id')
-]
+];
+
+const ChangeUserApplicationRule = [
+  check('job_id')
+    .isMongoId()
+    .withMessage('Invalid job id'),
+  check('user_id')
+    .isMongoId()
+    .withMessage('Invalid user id'),
+  check('status_id')
+    .isMongoId()
+    .withMessage('Invalid status id'),
+];
 
 module.exports = {
   AddUserApplicationRule,
   GetUserApplicationsByUserIdRule,
-  DeleteUserApplicationRule
+  DeleteUserApplicationRule,
+  ChangeUserApplicationRule
 }

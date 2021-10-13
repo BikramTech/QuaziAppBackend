@@ -8,7 +8,7 @@ const { UserProfileUpdateValidator } = require("../../lib/validators/userProfile
 const { AddUserEmploymentValidator, UpdateUserEmploymentValidator, GetUserEmploymentsByUserIdValidator, DeleteUserEmploymentRule } = require("../../lib/validators/userEmployementValidator");
 const { AddUserCertificationValidator, UpdateUserCertificationValidator, GetUserCertificationsByUserIdValidator, DeleteUserCertificationValidator } = require("../../lib/validators/userCertificationValidator");
 const { AddUserProjectsValidator, UpdateUserProjectsValidator, GetUserProjectsByUserIdValidator, DeleteUserProjectsValidator } = require("../../lib/validators/userProjectsValidator");
-const { AddUserApplicationValidator, GetUserApplicationsByUserIdValidator, DeleteUserApplicationValidator } = require("../../lib/validators/userApplicationValidator");
+const { AddUserApplicationValidator, GetUserApplicationsByUserIdValidator, DeleteUserApplicationValidator, ChangeUserApplicationValidator } = require("../../lib/validators/userApplicationValidator");
 
 const DocumentUpload = DocUpload.fields([
   { name: "profile_pic", maxCount: 1 },
@@ -51,5 +51,6 @@ router.post("/AddUserApplication", [Authorize, AddUserApplicationValidator], Use
 router.get("/GetUserApplicationsByUserId/:user_id", [Authorize, GetUserApplicationsByUserIdValidator], UserController.GetUserApplicationsByUserId);
 // router.post('/UpdateUserApplicationStatus/:id', Authorize, UserController.UpdateUserApplicationStatus); // Need to move this route to the corporate module later
 router.delete("/DeleteUserApplication/:id", [Authorize, DeleteUserApplicationValidator], UserController.DeleteUserApplication);
+router.post("/ChangeUserApplicationStatus", [Authorize, ChangeUserApplicationValidator], UserController.changeUserApplicationStatus);
 
 module.exports = router;

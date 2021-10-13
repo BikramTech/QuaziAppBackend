@@ -11,7 +11,7 @@ const {
 } = require('../db/models')
 
 class CorporateUserController {
-  static async userSignup (req, res) {
+  static async userSignup(req, res) {
     try {
       const { user_name, email, mobile_no } = req.body
 
@@ -56,7 +56,7 @@ class CorporateUserController {
     }
   }
 
-  static async emailVerification (req, res) {
+  static async emailVerification(req, res) {
     const { email, otp } = req.body
 
     try {
@@ -107,7 +107,7 @@ class CorporateUserController {
     }
   }
 
-  static async userProfileUpdate (req, res) {
+  static async userProfileUpdate(req, res) {
     try {
       const {
         first_name,
@@ -156,7 +156,7 @@ class CorporateUserController {
     }
   }
 
-  static async userLogin (req, res) {
+  static async userLogin(req, res) {
     let user = {}
     let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     const { email } = req.body
@@ -202,8 +202,8 @@ class CorporateUserController {
         !userProfile.is_active
           ? 'Your account is inactive. Please contact administrator!'
           : !userProfile.is_email_verified
-          ? 'Please verify your email.'
-          : ''
+            ? 'Please verify your email.'
+            : ''
       )
     }
 
@@ -235,7 +235,7 @@ class CorporateUserController {
     return helpers.SendSuccessResponseWithAuthHeader(res, token, response)
   }
 
-  static async forgotPassword (req, res) {
+  static async forgotPassword(req, res) {
     try {
       const user = await QzCrUserRegistration.findOne({ email: req.body.email })
 
@@ -265,7 +265,7 @@ class CorporateUserController {
     }
   }
 
-  static async changePassword (req, res) {
+  static async changePassword(req, res) {
     try {
       let password = req.body.newPassword
 
@@ -317,7 +317,7 @@ class CorporateUserController {
     }
   }
 
-  static async details (req, res) {
+  static async details(req, res) {
     try {
       let user = await QzCrUserRegistration.findById(req.params.id)
       if (!user)
@@ -348,7 +348,7 @@ class CorporateUserController {
     }
   }
 
-  static async sendOtp (req, res) {
+  static async sendOtp(req, res) {
     try {
       const { email } = req.body
       let OTP = helpers.GenerateSixDigitCode()
@@ -383,6 +383,45 @@ class CorporateUserController {
         })
     } catch (err) {
       return helpers.SendErrorsAsResponse(err, res)
+    }
+  }
+
+  static async changeStatus(req, res) {
+    try {
+      if (req.body.status) {
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'Please Provide a Valid Argument in Body'
+        )
+      }
+      let { is_active } = req.body
+
+      const user = await QzCrUserProfile.findByIdAndUpdate(
+        req.params.id,
+        {
+          is_active,
+          updated: new Date()
+        },
+        { new: true }
+      )
+
+      if (!user)
+        return helpers.SendErrorsAsResponse(
+          null,
+          res,
+          'The id Provided is Invalid'
+        )
+
+      let response = {
+        status_code: 1,
+        message: 'Status Changed Successfully',
+        result: []
+      }
+
+      return helpers.SendSuccessResponse(res, response)
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res, null)
     }
   }
 }
