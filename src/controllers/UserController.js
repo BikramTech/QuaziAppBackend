@@ -416,8 +416,8 @@ class UserController {
           social_id,
           social_type,
           gender,
-          profilePicObj,
-          resumeFileObj,
+          ...profilePicObj,
+          ...resumeFileObj,
           updated_at: new Date()
         },
         { new: true, upsert: true }
