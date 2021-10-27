@@ -1185,7 +1185,7 @@ class JobListingController {
         }
       ]);
 
-      total_jobs_count = total_jobs_count[0].total_jobs_count;
+      total_jobs_count = total_jobs_count[0]?.total_jobs_count;
 
       if (total_jobs_count > 0) {
         let userApplication = await QzUserApplications.aggregate([
