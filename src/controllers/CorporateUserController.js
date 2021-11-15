@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const { MailService } = require('../lib/services')
+const { MailService, SmsService } = require('../lib/services')
 const helpers = require('../config/helpers')
 const appConfig = require('../config/appConfig')
 const jwt = require('jsonwebtoken')
@@ -34,6 +34,7 @@ class CorporateUserController {
         'OTP For Quazi App Registration',
         emailVerificationOtp
       )
+      await SmsService.SendSms(mobile_no, `OTP For Quazi App Registration is ${emailVerificationOtp}`);
 
       const token = userRegistrationResult.generateAuthToken()
       const {
@@ -350,7 +351,7 @@ class CorporateUserController {
 
   static async sendOtp(req, res) {
     try {
-      const { email } = req.body
+      const { email, mobile_no } = req.body
       let OTP = helpers.GenerateSixDigitCode()
 
       const user = await QzCrUserRegistration.findOneAndUpdate(
@@ -366,21 +367,21 @@ class CorporateUserController {
           res,
           'The user with the given Email was not found.'
         )
+
+    
       let response
 
-      MailService.sendMail(email, 'OTP For Quazi', OTP)
-        .then(resp => {
-          console.log('Email sent successfully')
-          response = {
-            status_code: 1,
-            message: 'OTP Sent Successfully',
-            result: []
-          }
-          return helpers.SendSuccessResponse(res, response)
-        })
-        .catch(err => {
-          return helpers.SendErrorsAsResponse(err, res, 'Failed to send OTP')
-        })
+      await MailService.sendMail(email, 'OTP For Quazi', OTP);
+      await SmsService.SendSms(mobile_no, `OTP For Quazi is ${OTP}`);
+
+      console.log('Email sent successfully')
+      response = {
+        status_code: 1,
+        message: 'OTP Sent Successfully',
+        result: []
+      }
+      return helpers.SendSuccessResponse(res, response)
+      
     } catch (err) {
       return helpers.SendErrorsAsResponse(err, res)
     }

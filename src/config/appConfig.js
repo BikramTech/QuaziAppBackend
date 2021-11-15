@@ -26,5 +26,10 @@ module.exports = {
   },
   encryption: {
     secret_key: process.env.ENCRYPTION_SECRET_KEY
+  },
+  twilio: {
+    account_sid: process.env.TWILIO_ACCOUNT_SID,
+    account_auth_token: process.env.TWILIO_AUTH_TOKEN,
+    message_service_id: process.env.MESSAGE_SERVICE_ID
   }
 }
