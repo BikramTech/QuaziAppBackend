@@ -29,6 +29,10 @@ const QzUserRegistrationSchema = new mongoose.Schema({
   is_email_verified: {
     type: Boolean,
     default: false
+  },
+  device_tokens: {
+    type: Array,
+    default: []
   }
 })
 

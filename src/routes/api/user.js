@@ -27,6 +27,7 @@ router.post("/ForgotPassword", EmailValidator, UserController.forgotPassword);
 router.patch("/ChangePassword/:id", [Authorize, ChangePasswordValidator], UserController.changePassword);
 router.post("/SendOtp", EmailValidator, UserController.sendOtp);
 router.patch("/ChangeStatus/:id", [Authorize, UserIdValidator], UserController.changeStatus);
+router.post("/SaveDeviceToken",  UserIdValidator, UserController.saveDeviceToken);
 
 //User Employment routes
 router.post("/AddUserEmployment", [Authorize, AddUserEmploymentValidator], UserController.AddUserEmployment);

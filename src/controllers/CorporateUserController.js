@@ -425,6 +425,53 @@ class CorporateUserController {
       return helpers.SendErrorsAsResponse(err, res, null)
     }
   }
+
+  static async saveDeviceToken(req, res) {
+    try {
+      const { id, device_token } = req.body
+
+      const userRegistrationResult = await  QzCrUserRegistration.findById(id);
+
+      if(userRegistrationResult)
+      {
+        if(userRegistrationResult.device_tokens && userRegistrationResult.device_tokens.length)
+        {
+          const isDeviceTokenExistsAlready = userRegistrationResult.device_tokens.filter(x => x === device_token).length > 0;
+
+          if(!isDeviceTokenExistsAlready)
+          {
+            const deviceTokens = [...userRegistrationResult.device_tokens, device_token]
+            await userRegistrationResult.updateOne({device_tokens: deviceTokens});
+
+            let response = {
+              status_code: 1,
+              message:
+                'New Device token saved successfully',
+              result: []
+            }
+      
+            return helpers.SendSuccessResponse(res, response)
+          }
+
+          return helpers.SendErrorsAsResponse(
+            null,
+            res,
+            'This device token exists already')
+        }
+        else
+        {
+          await userRegistrationResult.updateOne({device_tokens: [device_token]});
+        }
+      }
+      return helpers.SendErrorsAsResponse(
+        null,
+        res,
+        'User Not found!')
+      
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res)
+    }
+  }
 }
 
 module.exports = CorporateUserController

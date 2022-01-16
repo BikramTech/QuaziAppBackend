@@ -48,5 +48,5 @@ router.get(
 )
 router.post('/SendOtp', EmailValidator, CorporateUserController.sendOtp)
 router.patch("/ChangeStatus/:id", [Authorize, UserIdValidator], CorporateUserController.changeStatus);
-
+router.post("/SaveDeviceToken",  UserIdValidator, CorporateUserController.saveDeviceToken);
 module.exports = router

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const { MailService, SmsService } = require('../lib/services')
+const { MailService, SmsService, FcmNotificationService } = require('../lib/services')
 const helpers = require('../config/helpers')
 const appConfig = require('../config/appConfig')
 const jwt = require('jsonwebtoken')
@@ -12,7 +12,8 @@ const {
   QzUserCertification,
   QzUserApplications,
   QzEmployment,
-  QzApplicationStatus
+  QzApplicationStatus,
+  QzCrUserRegistration
 } = require('../db/models')
 const QzSkills = require('../db/models/keyskills/Qz_Key_Skills')
 const ObjectId = require('mongodb').ObjectID
@@ -1069,9 +1070,21 @@ class UserController {
         job_id,
         status_id: defaultStatus ? defaultStatus._doc._id : null,
         last_update_date
-      })
+      });
 
-      await userApplicationsModel.save()
+      await userApplicationsModel.save();
+
+      const userEmployment = await QzEmployment.findById(job_id);
+
+      const crUser = await QzCrUserRegistration.findById(userEmployment.posted_by);
+
+      if(crUser && crUser.device_tokens && crUser.device_tokens.length)
+      {
+        crUser.device_tokens.forEach(x => {
+          FcmNotificationService.sendNotificationToDevice(x, {user_id, job_id}, 'Job Application', 'A job application have just arrived!');
+        })
+      }
+
 
       let response = {
         status_code: 1,
@@ -1209,6 +1222,53 @@ class UserController {
       helpers.SendErrorsAsResponse(err, res);
     }
 
+  }
+
+  static async saveDeviceToken(req, res) {
+    try {
+      const { id, device_token } = req.body
+
+      const userRegistrationResult = await  QzUserRegistration.findById(id);
+
+      if(userRegistrationResult)
+      {
+        if(userRegistrationResult.device_tokens && userRegistrationResult.device_tokens.length)
+        {
+          const isDeviceTokenExistsAlready = userRegistrationResult.device_tokens.filter(x => x === device_token).length > 0;
+
+          if(!isDeviceTokenExistsAlready)
+          {
+            const deviceTokens = [...userRegistrationResult.device_tokens, device_token]
+            await userRegistrationResult.updateOne({device_tokens: deviceTokens});
+
+            let response = {
+              status_code: 1,
+              message:
+                'New Device token saved successfully',
+              result: []
+            }
+      
+            return helpers.SendSuccessResponse(res, response)
+          }
+
+          return helpers.SendErrorsAsResponse(
+            null,
+            res,
+            'This device token exists already')
+        }
+        else
+        {
+          await userRegistrationResult.updateOne({device_tokens: [device_token]});
+        }
+      }
+      return helpers.SendErrorsAsResponse(
+        null,
+        res,
+        'User Not found!')
+      
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res)
+    }
   }
 }
 
