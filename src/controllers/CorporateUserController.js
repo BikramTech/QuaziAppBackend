@@ -461,6 +461,14 @@ class CorporateUserController {
         else
         {
           await userRegistrationResult.updateOne({device_tokens: [device_token]});
+          let response = {
+            status_code: 1,
+            message:
+              'New Device token saved successfully',
+            result: []
+          }
+    
+          return helpers.SendSuccessResponse(res, response)
         }
       }
       return helpers.SendErrorsAsResponse(

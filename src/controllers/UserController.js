@@ -1081,9 +1081,15 @@ class UserController {
       if(crUser && crUser.device_tokens && crUser.device_tokens.length)
       {
         crUser.device_tokens.forEach(x => {
-          FcmNotificationService.sendNotificationToDevice(x, {user_id, job_id}, 'Job Application', 'A job application have just arrived!');
+          FcmNotificationService.sendNotificationToDevice(x, {user_id, job_id}, 'Job Application',   `A user has applied on your job application (${userEmployment.job_name})`);
         })
       }
+
+      await MailService.sendMail(
+        crUser.email,
+        'Job application',
+        `A user has applied on your job application (${userEmployment.job_name})`
+      )
 
 
       let response = {
