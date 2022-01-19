@@ -28,6 +28,7 @@ router.patch("/ChangePassword/:id", [Authorize, ChangePasswordValidator], UserCo
 router.post("/SendOtp", EmailValidator, UserController.sendOtp);
 router.patch("/ChangeStatus/:id", [Authorize, UserIdValidator], UserController.changeStatus);
 router.post("/SaveDeviceToken",  UserIdValidator, UserController.saveDeviceToken);
+router.post("/GetUsers", [Authorize], UserController.getUsers);
 
 //User Employment routes
 router.post("/AddUserEmployment", [Authorize, AddUserEmploymentValidator], UserController.AddUserEmployment);
@@ -48,7 +49,7 @@ router.post("/UpdateUserCertification/:id", [Authorize, UpdateUserCertificationV
 router.delete("/DeleteUserCertification/:id", [Authorize, DeleteUserCertificationValidator], UserController.DeleteUserCertification);
 
 //User Applications routes
-router.post("/AddUserApplication", [Authorize, AddUserApplicationValidator], UserController.AddUserApplication);
+router.post("/AddUserApplication", [ AddUserApplicationValidator], UserController.AddUserApplication);
 router.get("/GetUserApplicationsByUserId/:user_id", [Authorize, GetUserApplicationsByUserIdValidator], UserController.GetUserApplicationsByUserId);
 // router.post('/UpdateUserApplicationStatus/:id', Authorize, UserController.UpdateUserApplicationStatus); // Need to move this route to the corporate module later
 router.delete("/DeleteUserApplication/:id", [Authorize, DeleteUserApplicationValidator], UserController.DeleteUserApplication);

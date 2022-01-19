@@ -480,6 +480,82 @@ class CorporateUserController {
       return helpers.SendErrorsAsResponse(err, res)
     }
   }
+
+  static async getUsers(req, res) {
+    try {
+
+      const {keyword} = req.body;
+
+      const sortBy = req.body.sortBy || 'email'
+      const sortOrder = req.body.sortOrder || -1
+      const recordsPerPage = req.body.recordsPerPage || 10
+      const pageNumber = req.body.pageNumber || 0
+
+      let sortObject = '{' + '"' + sortBy + '": ' + sortOrder + '}'
+      sortObject = JSON.parse(sortObject)
+      const recordsToSkip = parseInt(pageNumber) * parseInt(recordsPerPage);
+
+      const query = CorporateUserController.getSearchUserQuery(
+        keyword
+      )
+
+      const crUsers = await QzCrUserRegistration.aggregate([
+        { $match: query },
+        { $sort: sortObject },
+        { $skip: recordsToSkip },
+        { $limit: parseInt(recordsPerPage) }
+      ]);
+
+      const usersCount =  await QzCrUserRegistration.aggregate([
+        { $match: query },
+        {
+          $count: 'usersCount'
+        }
+      ])
+
+      let response = {
+        status_code: 1,
+        message:'',
+        result: [{users: crUsers,
+          usersCount: usersCount[0].usersCount}]
+      }
+          return helpers.SendSuccessResponse(res, response)
+
+      
+    } catch (err) {
+      return helpers.SendErrorsAsResponse(err, res)
+    }
+  }
+
+  static getSearchUserQuery(keyword) {
+    let query = {}
+
+    // if (jobtype) {
+    //   query['$and'].push({
+    //     'qz_job_types.name': { $regex: jobtype, $options: 'i' }
+    //   })
+    // }
+  
+    if (keyword) {
+      let orQuery = {}
+      orQuery['$or'] = []
+
+      const likeRegex = new RegExp(`^.*${keyword}.*$`, 'is')
+      
+      orQuery['$or'].push({ user_name: likeRegex })
+      orQuery['$or'].push({ mobile_no: likeRegex })
+      orQuery['$or'].push({ email: likeRegex })
+
+      let andQuery = query['$and']
+
+      if (andQuery) {
+        andQuery.push(orQuery)
+      } else {
+        query = orQuery
+      }
+    }
+    return query
+  }
 }
 
 module.exports = CorporateUserController
