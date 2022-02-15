@@ -31,5 +31,12 @@ module.exports = {
     account_sid: process.env.TWILIO_ACCOUNT_SID,
     account_auth_token: process.env.TWILIO_AUTH_TOKEN,
     message_service_id: process.env.MESSAGE_SERVICE_ID
+  },
+  stripe:{
+    publishable_key: process.env.STRIPE_PUBLISHABLE_KEY,
+    secret_key: process.env.STRIPE_SECRET_KEY,
+    success_url:process.env.STRIPE_SUCCESS_URL,
+    cancel_url:process.env.STRIPE_CANCEL_URL,
+    currency: process.env.STRIPE_CURRENCY
   }
 }

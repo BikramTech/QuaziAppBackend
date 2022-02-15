@@ -8,5 +8,6 @@ const UserEducationController = require("./UserEducationController");
 const TermsConditionsController = require("./TermsConditionsController");
 const ApplicationStatusController = require("./ApplicationStatusController");
 const PaymentPlanController = require("./PaymentPlanController");
+const PaymentsController = require("./PaymentsController");
 
-module.exports = { UserController, CorporateUserController, CompanyController, JobTypesController, JobListingController, SkillsController, UserEducationController, TermsConditionsController, ApplicationStatusController, PaymentPlanController }
+module.exports = { UserController, CorporateUserController, CompanyController, JobTypesController, JobListingController, SkillsController, UserEducationController, TermsConditionsController, ApplicationStatusController, PaymentPlanController, PaymentsController }

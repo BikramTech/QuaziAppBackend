@@ -10,5 +10,6 @@ router.use('/user-education', require('./userEducation'));
 router.use('/admin', require('./admin'));
 router.use('/application-status', require('./applicationStatus'));
 router.use('/payment-plans', require('./paymentPlans'));
+router.use('/payments', require('./payments'));
 
 module.exports = router

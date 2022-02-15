@@ -38,6 +38,9 @@ app.use(compression())
 app.use(passport.initialize())
 require('./src/middlewares/jwtStrategy')(passport)
 
+
+app.use(express.urlencoded());
+
 app.use(require('./src/routes'))
 
 // catch 404 and forward to error handler

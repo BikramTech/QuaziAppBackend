@@ -23,6 +23,9 @@ const QzPaymentPlansSchema = new mongoose.Schema({
     keyBenefits: {
         type: Array,
     },
+    plan_id: {
+        type: String
+    }
 });
 
 const QzPaymentPlans = mongoose.model("Qz_Payment_Plans", QzPaymentPlansSchema);
