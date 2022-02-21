@@ -19,6 +19,7 @@ const QzEmployment = require("./employments/Qz_Employment");
 const QzUserEducation = require("./users/Qz_User_Education");
 const QzTermsConditions = require("./termsAndConditions/Qz_Terms_Conditions");
 const QzPaymentPlans = require("./payment-plans/Qz_Payment_Plans");
+const QzUserTransactions = require("./transactions/user_transactions");
 
 
-module.exports = { QzUserRegistration, QzUserProfile, QzKeySkills, QzUserEmployment, QzUserProjects, QzUserCertification, QzUserApplications, QzApplicationStatus, QzCrUserRegistration, QzCompanyTypes, QzCrUserProfile, QzJobTypes, QzEmployment, QzUserEducation, QzTermsConditions, QzPaymentPlans };
+module.exports = { QzUserRegistration, QzUserProfile, QzKeySkills, QzUserEmployment, QzUserProjects, QzUserCertification, QzUserApplications, QzApplicationStatus, QzCrUserRegistration, QzCompanyTypes, QzCrUserProfile, QzJobTypes, QzEmployment, QzUserEducation, QzTermsConditions, QzPaymentPlans, QzUserTransactions };
